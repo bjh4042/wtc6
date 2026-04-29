@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { HUES, type HueKey } from "@/game/types";
 import { Stone } from "@/components/Stone";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles } from "lucide-react";
+import { Sparkles, AlertCircle } from "lucide-react";
 
 export interface SetupPlayer {
   name: string;
@@ -48,12 +49,54 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const takenBy = (idx: number) =>
     players.filter((_, i) => i !== idx).map((p) => p.hue).filter(Boolean) as HueKey[];
 
-  const allChosen = players.every((p) => p.hue !== null);
-  const allNamed = players.every((p) => p.name.trim().length > 0);
-  const canStart = allChosen && allNamed;
+  // 검증 — 누락/중복 사유를 구체적으로 모음
+  const issues = useMemo(() => {
+    const list: string[] = [];
+    players.forEach((p, i) => {
+      if (!p.name.trim()) list.push(`${DEFAULT_NAMES[i]}의 이름을 입력해주세요.`);
+    });
+    // 이름 중복
+    const nameMap = new Map<string, number[]>();
+    players.forEach((p, i) => {
+      const k = p.name.trim();
+      if (!k) return;
+      const arr = nameMap.get(k) ?? [];
+      arr.push(i);
+      nameMap.set(k, arr);
+    });
+    nameMap.forEach((arr, name) => {
+      if (arr.length > 1) {
+        list.push(`이름 "${name}"이(가) 중복됐어요 (${arr.map((i) => `P${i + 1}`).join(", ")}).`);
+      }
+    });
+    // 색상 미선택
+    players.forEach((p, i) => {
+      if (!p.hue) list.push(`${p.name.trim() || DEFAULT_NAMES[i]}의 색상을 골라주세요.`);
+    });
+    // 색상 중복 (UI에서 막지만 안전망)
+    const hueMap = new Map<HueKey, number[]>();
+    players.forEach((p, i) => {
+      if (!p.hue) return;
+      const arr = hueMap.get(p.hue) ?? [];
+      arr.push(i);
+      hueMap.set(p.hue, arr);
+    });
+    hueMap.forEach((arr, hue) => {
+      if (arr.length > 1) {
+        const label = HUES.find((h) => h.key === hue)?.label ?? hue;
+        list.push(`색상 "${label}"이(가) 중복됐어요 (${arr.map((i) => `P${i + 1}`).join(", ")}).`);
+      }
+    });
+    return list;
+  }, [players]);
 
   const handleStart = () => {
-    if (!canStart) return;
+    if (issues.length > 0) {
+      toast.error("게임을 시작할 수 없어요", {
+        description: issues.join("\n"),
+      });
+      return;
+    }
     onStart({
       players: players.map((p, i) => ({
         name: p.name.trim() || DEFAULT_NAMES[i],
