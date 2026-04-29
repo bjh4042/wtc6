@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Sparkles } from "lucide-react";
 
 interface SetupScreenProps {
@@ -17,53 +24,12 @@ interface SetupScreenProps {
 
 const PLAYER_LABELS = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
 
-const ColorWheel = ({
-  selectedByOthers,
-  selected,
-  onPick,
-}: {
-  selectedByOthers: HueKey[];
-  selected: HueKey | null;
-  onPick: (h: HueKey) => void;
-}) => {
-  const radius = 78;
-  const cx = 100;
-  const cy = 100;
-  return (
-    <div className="relative mx-auto" style={{ width: 200, height: 200 }}>
-      <div className="absolute inset-4 rounded-full bg-gradient-to-br from-background to-muted/60 shadow-inner" />
-      {HUES.map((h, i) => {
-        const angle = (i / HUES.length) * Math.PI * 2 - Math.PI / 2;
-        const x = cx + Math.cos(angle) * radius - 18;
-        const y = cy + Math.sin(angle) * radius - 18;
-        const disabled = selectedByOthers.includes(h.key);
-        const isSelected = selected === h.key;
-        return (
-          <button
-            key={h.key}
-            type="button"
-            disabled={disabled}
-            onClick={() => onPick(h.key)}
-            aria-label={h.label}
-            title={h.label + (disabled ? " (선택됨)" : "")}
-            style={{ left: x, top: y }}
-            className={[
-              "absolute btn-bounce rounded-full",
-              "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-              disabled ? "opacity-25 cursor-not-allowed grayscale" : "cursor-pointer",
-              isSelected ? "ring-4 ring-foreground/70 scale-110" : "",
-            ].join(" ")}
-          >
-            <Stone hue={h.key} size={36} />
-          </button>
-        );
-      })}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <span className="text-xs font-bold text-muted-foreground">먼셀 10색</span>
-      </div>
-    </div>
-  );
-};
+const ColorOption = ({ hueKey, label }: { hueKey: HueKey; label: string }) => (
+  <div className="flex items-center gap-3">
+    <Stone hue={hueKey} size={22} />
+    <span className="font-bold">{label}</span>
+  </div>
+);
 
 export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const [players, setPlayers] = useState<PlayerConfig[]>([
@@ -71,23 +37,14 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
     { id: 1, hue: null },
     { id: 2, hue: null },
   ]);
-  const [activePlayer, setActivePlayer] = useState<0 | 1 | 2>(0);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
 
-  const pick = (hue: HueKey) => {
-    setPlayers((prev) => {
-      const next = prev.map((p) => (p.id === activePlayer ? { ...p, hue } : p));
-      return next;
-    });
-    // 자동으로 다음 미선택 플레이어로 이동
-    const nextEmpty = players.findIndex((p, idx) => idx !== activePlayer && p.hue === null);
-    if (nextEmpty !== -1 && players[activePlayer].hue === null) {
-      setActivePlayer(nextEmpty as 0 | 1 | 2);
-    }
+  const setPlayerHue = (idx: number, hue: HueKey) => {
+    setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
   };
 
-  const otherPicked = (idx: number) =>
+  const takenBy = (idx: number) =>
     players.filter((_, i) => i !== idx).map((p) => p.hue).filter(Boolean) as HueKey[];
 
   const allChosen = players.every((p) => p.hue !== null);
@@ -118,38 +75,63 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
           {/* Players */}
           <div>
             <h2 className="font-display text-xl mb-4">플레이어 색상 선택</h2>
-            <div className="grid grid-cols-3 gap-3">
-              {players.map((p, idx) => (
-                <button
-                  key={p.id}
-                  type="button"
-                  onClick={() => setActivePlayer(idx as 0 | 1 | 2)}
-                  className={[
-                    "btn-bounce rounded-2xl p-3 border-2 flex flex-col items-center gap-2 bg-background",
-                    activePlayer === idx ? "border-primary shadow-md" : "border-border",
-                  ].join(" ")}
-                >
-                  <span className="text-sm font-bold">{PLAYER_LABELS[idx]}</span>
-                  <div className="h-10 flex items-center justify-center">
-                    {p.hue ? (
-                      <Stone hue={p.hue} size={36} />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">선택 대기</span>
-                    )}
+            <div className="grid gap-3 sm:grid-cols-3">
+              {players.map((p, idx) => {
+                const taken = takenBy(idx);
+                const selectedLabel = p.hue
+                  ? HUES.find((h) => h.key === p.hue)?.label
+                  : undefined;
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-2xl p-4 border-2 border-border bg-background flex flex-col items-center gap-3"
+                  >
+                    <span className="text-sm font-bold">{PLAYER_LABELS[idx]}</span>
+                    <div className="h-12 flex items-center justify-center">
+                      {p.hue ? (
+                        <Stone hue={p.hue} size={44} animated key={p.hue} />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">색상 미선택</span>
+                      )}
+                    </div>
+                    <Select
+                      value={p.hue ?? undefined}
+                      onValueChange={(v) => setPlayerHue(idx, v as HueKey)}
+                    >
+                      <SelectTrigger className="w-full rounded-xl border-2 font-bold h-11 bg-card">
+                        <SelectValue placeholder="색상 선택">
+                          {p.hue && selectedLabel && (
+                            <ColorOption hueKey={p.hue} label={selectedLabel} />
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="rounded-xl">
+                        {HUES.map((h) => {
+                          const disabled = taken.includes(h.key) && p.hue !== h.key;
+                          return (
+                            <SelectItem
+                              key={h.key}
+                              value={h.key}
+                              disabled={disabled}
+                              className="rounded-lg my-0.5 focus:bg-secondary"
+                            >
+                              <div className="flex items-center gap-3">
+                                <Stone hue={h.key} size={20} />
+                                <span className="font-bold">{h.label}</span>
+                                {disabled && (
+                                  <span className="ml-auto text-[10px] text-muted-foreground">
+                                    선택됨
+                                  </span>
+                                )}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-6 p-4 rounded-2xl bg-secondary/60 border border-border">
-              <p className="text-sm font-semibold mb-3 text-center">
-                <span className="text-primary">{PLAYER_LABELS[activePlayer]}</span>의 색상을 골라주세요
-              </p>
-              <ColorWheel
-                selected={players[activePlayer].hue}
-                selectedByOthers={otherPicked(activePlayer)}
-                onPick={pick}
-              />
+                );
+              })}
             </div>
           </div>
 
