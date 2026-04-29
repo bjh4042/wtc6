@@ -34,13 +34,22 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
   const [remaining, setRemaining] = useState(timerSeconds);
+  const [timeoutBanner, setTimeoutBanner] = useState<{ from: string; to: string } | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const bannerTimerRef = useRef<number | null>(null);
 
   const gameOver = winner !== null || draw;
 
   const advanceTurn = (next?: PlayerId) => {
     setCurrent((p) => (next !== undefined ? next : (((p + 1) % 3) as PlayerId)));
     setRemaining(timerSeconds);
+  };
+
+  const showTimeoutBanner = (fromIdx: PlayerId) => {
+    const toIdx = ((fromIdx + 1) % 3) as PlayerId;
+    setTimeoutBanner({ from: players[fromIdx].name, to: players[toIdx].name });
+    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+    bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
   };
 
   // Timer
@@ -50,8 +59,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     intervalRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // turn pass
-          window.setTimeout(() => advanceTurn(), 0);
+          // turn pass — 배너 표시 후 다음 턴으로
+          window.setTimeout(() => {
+            setCurrent((cur) => {
+              showTimeoutBanner(cur);
+              return ((cur + 1) % 3) as PlayerId;
+            });
+            setRemaining(timerSeconds);
+          }, 0);
           return timerSeconds;
         }
         return r - 1;
@@ -62,6 +77,12 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerEnabled, gameOver, current, timerSeconds]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+    };
+  }, []);
 
   const handlePlace = (r: number, c: number) => {
     if (gameOver) return;
