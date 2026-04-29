@@ -108,7 +108,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
             <div className="mt-2 flex items-center gap-3">
               <Stone hue={currentHue} size={40} animated key={`turn-${current}`} />
               <div>
-                <p className="font-display text-xl">{PLAYER_LABELS[current]}</p>
+                <p className="font-display text-xl">{players[current].name}</p>
                 <p className="text-xs text-muted-foreground">
                   {HUES.find((h) => h.key === currentHue)?.label}
                 </p>
@@ -143,7 +143,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
                   ].join(" ")}
                 >
                   <StoneFlat hue={p.hue} size={22} />
-                  <span className="text-sm font-bold flex-1">{PLAYER_LABELS[idx]}</span>
+                  <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
                   {current === idx && !gameOver && (
                     <span className="text-[10px] font-bold uppercase text-primary">차례</span>
                   )}
