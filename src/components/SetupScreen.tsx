@@ -224,13 +224,26 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
               </div>
             </div>
 
+            {issues.length > 0 && (
+              <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 animate-fade-in">
+                <div className="flex items-center gap-2 mb-2 text-destructive">
+                  <AlertCircle className="w-4 h-4" />
+                  <span className="text-sm font-display">시작하려면 다음을 확인해주세요</span>
+                </div>
+                <ul className="text-xs space-y-1 text-foreground/80 list-disc pl-5">
+                  {issues.slice(0, 4).map((msg, i) => (
+                    <li key={i}>{msg}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <Button
               size="lg"
-              disabled={!canStart}
               onClick={handleStart}
               className="btn-bounce h-14 text-lg font-display rounded-2xl shadow-lg"
             >
-              {canStart ? "🎮 게임 시작!" : !allChosen ? "3명 모두 색상을 골라주세요" : "이름을 입력해주세요"}
+              🎮 게임 시작!
             </Button>
           </aside>
         </section>
