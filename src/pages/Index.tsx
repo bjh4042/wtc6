@@ -4,7 +4,7 @@ import { GameScreen } from "@/components/GameScreen";
 import type { HueKey } from "@/game/types";
 
 interface GameSettings {
-  players: Array<{ hue: HueKey }>;
+  players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
 }
