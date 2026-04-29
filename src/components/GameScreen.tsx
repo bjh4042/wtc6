@@ -14,7 +14,11 @@ import { Stone, StoneFlat } from "@/components/Stone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
-import { RotateCcw, Timer as TimerIcon } from "lucide-react";
+import { RotateCcw, Timer as TimerIcon, TimerOff } from "lucide-react";
+
+// hue 키 → CSS hsl() 문자열
+const hueToHsl = (hue: HueKey) =>
+  `hsl(var(--hue-${hue}-h) var(--hue-${hue}-s) var(--hue-${hue}-l))`;
 
 interface GameScreenProps {
   players: Array<{ name: string; hue: HueKey }>;
@@ -30,13 +34,22 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
   const [remaining, setRemaining] = useState(timerSeconds);
+  const [timeoutBanner, setTimeoutBanner] = useState<{ from: string; to: string } | null>(null);
   const intervalRef = useRef<number | null>(null);
+  const bannerTimerRef = useRef<number | null>(null);
 
   const gameOver = winner !== null || draw;
 
   const advanceTurn = (next?: PlayerId) => {
     setCurrent((p) => (next !== undefined ? next : (((p + 1) % 3) as PlayerId)));
     setRemaining(timerSeconds);
+  };
+
+  const showTimeoutBanner = (fromIdx: PlayerId) => {
+    const toIdx = ((fromIdx + 1) % 3) as PlayerId;
+    setTimeoutBanner({ from: players[fromIdx].name, to: players[toIdx].name });
+    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+    bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
   };
 
   // Timer
@@ -46,8 +59,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     intervalRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // turn pass
-          window.setTimeout(() => advanceTurn(), 0);
+          // turn pass — 배너 표시 후 다음 턴으로
+          window.setTimeout(() => {
+            setCurrent((cur) => {
+              showTimeoutBanner(cur);
+              return ((cur + 1) % 3) as PlayerId;
+            });
+            setRemaining(timerSeconds);
+          }, 0);
           return timerSeconds;
         }
         return r - 1;
@@ -58,6 +77,12 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timerEnabled, gameOver, current, timerSeconds]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+    };
+  }, []);
 
   const handlePlace = (r: number, c: number) => {
     if (gameOver) return;
@@ -87,6 +112,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     setDraw(false);
     setLastMove(null);
     setRemaining(timerSeconds);
+    setTimeoutBanner(null);
+    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
   };
 
   const winLineSet = useMemo(() => {
@@ -96,9 +123,24 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
 
   const currentHue = players[current].hue;
   const timerPct = timerEnabled ? Math.max(0, (remaining / timerSeconds) * 100) : 0;
+  const winnerHue = winner ? players[winner.player].hue : null;
 
   return (
     <main className="min-h-screen w-full px-2 py-4 md:px-6 md:py-8 animate-fade-in">
+      {/* Timeout banner */}
+      {timeoutBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-scale-in">
+          <div className="flex items-center gap-3 rounded-2xl border-2 border-destructive/40 bg-card px-5 py-3 shadow-xl">
+            <TimerOff className="w-5 h-5 text-destructive" />
+            <div className="text-sm font-bold">
+              <span className="text-destructive">⏰ {timeoutBanner.from}</span>
+              <span className="text-muted-foreground"> 시간 초과! </span>
+              <span className="text-foreground">{timeoutBanner.to}</span>
+              <span className="text-muted-foreground">의 차례로 넘어갑니다.</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-6xl flex flex-col lg:flex-row gap-4 lg:gap-6 items-center lg:items-start">
         {/* Sidebar */}
         <aside className="w-full lg:w-72 flex flex-col gap-4 order-2 lg:order-1">
@@ -168,6 +210,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
             players={players}
             lastMove={lastMove}
             winLineSet={winLineSet}
+            winLine={winner?.line ?? null}
+            winnerHue={winnerHue}
             disabled={gameOver}
             onPlace={handlePlace}
           />
@@ -193,27 +237,26 @@ interface BoardGridProps {
   players: Array<{ hue: HueKey }>;
   lastMove: [number, number] | null;
   winLineSet: Set<string>;
+  winLine: Array<[number, number]> | null;
+  winnerHue: HueKey | null;
   disabled: boolean;
   onPlace: (r: number, c: number) => void;
 }
 
-const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: BoardGridProps) => {
-  // The board is rendered as a CSS grid of (BOARD_SIZE) cells where lines pass through cell centers.
-  // Outer padding equals half a cell so the outermost lines/stones sit nicely inside.
+const BoardGrid = ({
+  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, onPlace,
+}: BoardGridProps) => {
   return (
     <div
       className="wood-board rounded-3xl p-3 sm:p-5 w-full"
       style={{ maxWidth: "min(92vh, 720px)" }}
     >
-      <div
-        className="relative w-full aspect-square"
-        style={{
-          // Draw grid lines using gradients — exactly BOARD_SIZE-1 gaps.
-          // We position them so they pass through the centers of the cells.
-        }}
-      >
+      <div className="relative w-full aspect-square">
         {/* Grid lines */}
         <GridLines />
+
+        {/* Win line overlay (SVG) */}
+        {winLine && winnerHue && <WinLineOverlay line={winLine} hue={winnerHue} />}
 
         {/* Click + stone layer */}
         <div
@@ -229,29 +272,35 @@ const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: 
               const isLast = lastMove && lastMove[0] === r && lastMove[1] === c;
               const inWin = winLineSet.has(`${r},${c}`);
               const playerHue = cell !== null ? players[cell].hue : null;
+              const isEmpty = cell === null;
+              const isPlayable = isEmpty && !disabled;
               return (
                 <button
                   key={key}
                   type="button"
-                  aria-label={`${r + 1}행 ${c + 1}열`}
-                  disabled={disabled || cell !== null}
+                  aria-label={`${r + 1}행 ${c + 1}열${isEmpty ? "" : " (이미 놓임)"}`}
+                  disabled={!isPlayable}
                   onClick={() => onPlace(r, c)}
                   className={[
                     "relative flex items-center justify-center group",
                     "focus:outline-none focus-visible:z-10",
-                    cell === null && !disabled ? "cursor-pointer" : "cursor-default",
+                    isPlayable ? "cursor-pointer" : "cursor-not-allowed",
                   ].join(" ")}
                 >
-                  {cell !== null && playerHue && (
+                  {!isEmpty && playerHue && (
                     <Stone
                       hue={playerHue}
                       animated={!!isLast}
                       highlight={inWin}
-                      className="!w-[92%] !h-[92%]"
+                      className={[
+                        "!w-[92%] !h-[92%]",
+                        // 비-승리 라인 돌은 게임 종료 시 살짝 흐리게
+                        disabled && !inWin ? "opacity-55 saturate-75" : "",
+                      ].join(" ")}
                     />
                   )}
-                  {cell === null && !disabled && (
-                    <span className="absolute inset-[18%] rounded-full opacity-0 group-hover:opacity-40 bg-foreground/20 transition-opacity" />
+                  {isPlayable && (
+                    <span className="absolute inset-[20%] rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-foreground/10 ring-2 ring-foreground/30 group-hover:scale-110 transform-gpu duration-150" />
                   )}
                 </button>
               );
@@ -260,6 +309,52 @@ const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: 
         </div>
       </div>
     </div>
+  );
+};
+
+/* 승리 라인 오버레이 — 6목을 굵게 강조 + draw 애니메이션 */
+const WinLineOverlay = ({ line, hue }: { line: Array<[number, number]>; hue: HueKey }) => {
+  const N = BOARD_SIZE;
+  const step = 100 / N;
+  const start = step / 2;
+  const [r1, c1] = line[0];
+  const [r2, c2] = line[line.length - 1];
+  const x1 = start + c1 * step;
+  const y1 = start + r1 * step;
+  const x2 = start + c2 * step;
+  const y2 = start + r2 * step;
+  const color = hueToHsl(hue);
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none z-10"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      {/* glow halo */}
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={color}
+        strokeWidth="6"
+        strokeLinecap="round"
+        opacity="0.35"
+        vectorEffect="non-scaling-stroke"
+        style={{ filter: "blur(2px)", animation: "win-pulse 0.9s ease-in-out infinite" }}
+      />
+      {/* main bold stroke with draw animation */}
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={color}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+        pathLength={1}
+        style={{
+          strokeDasharray: 1,
+          strokeDashoffset: 1,
+          animation: "win-line-draw 0.6s ease-out forwards, win-pulse 1.4s 0.6s ease-in-out infinite",
+        }}
+      />
+    </svg>
   );
 };
 

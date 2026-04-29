@@ -132,3 +132,13 @@
     letter-spacing: -0.01em;
   }
 }
+
+/* Global keyframes (SVG inline animation에서 사용) */
+@keyframes win-line-draw {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes win-pulse {
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 0.65; }
+}
