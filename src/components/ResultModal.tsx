@@ -8,15 +8,14 @@ interface ResultModalProps {
   open: boolean;
   winner: WinResult | null;
   draw: boolean;
-  players: Array<{ hue: HueKey }>;
+  players: Array<{ name: string; hue: HueKey }>;
   onPlayAgain: () => void;
   onExit: () => void;
 }
 
-const PLAYER_LABELS = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
-
 export const ResultModal = ({ open, winner, draw, players, onPlayAgain, onExit }: ResultModalProps) => {
   const winHue = winner ? players[winner.player].hue : null;
+  const winName = winner ? players[winner.player].name : "";
   const winColorLabel = winHue ? HUES.find((h) => h.key === winHue)?.label : "";
 
   return (
@@ -28,7 +27,7 @@ export const ResultModal = ({ open, winner, draw, players, onPlayAgain, onExit }
               <Trophy className="w-12 h-12 text-primary animate-wiggle" />
               <DialogTitle className="font-display text-3xl">🎉 승리!</DialogTitle>
               <DialogDescription className="text-base">
-                <span className="font-bold text-foreground">{PLAYER_LABELS[winner.player]}</span> ({winColorLabel})님이 6목을 완성했어요!
+                <span className="font-bold text-foreground">{winName}</span> ({winColorLabel})님이 6목을 완성했어요!
               </DialogDescription>
             </>
           ) : (
