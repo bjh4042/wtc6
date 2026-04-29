@@ -1,8 +1,8 @@
 import { HUES, type HueKey } from "@/game/types";
 
 interface StoneProps {
-  hue: HueKey;
-  size?: number; // px
+  hue: HueKey | null;
+  size?: number; // px; if omitted, sizing comes from className
   className?: string;
   animated?: boolean;
   highlight?: boolean;
@@ -10,13 +10,15 @@ interface StoneProps {
 
 const hueVar = (hue: HueKey) => HUES.find((h) => h.key === hue)?.varName ?? "hue-red";
 
-export const Stone = ({ hue, size = 28, className = "", animated = false, highlight = false }: StoneProps) => {
+export const Stone = ({ hue, size, className = "", animated = false, highlight = false }: StoneProps) => {
+  if (!hue) return null;
   const style: React.CSSProperties = {
-    width: size,
-    height: size,
-    // expose --stone-hue to CSS for the .stone gradient
     ["--stone-hue" as any]: `var(--${hueVar(hue)})`,
   };
+  if (size !== undefined) {
+    style.width = size;
+    style.height = size;
+  }
   return (
     <span
       aria-hidden
@@ -31,7 +33,8 @@ export const Stone = ({ hue, size = 28, className = "", animated = false, highli
   );
 };
 
-export const StoneFlat = ({ hue, size = 22, className = "" }: { hue: HueKey; size?: number; className?: string }) => {
+export const StoneFlat = ({ hue, size = 22, className = "" }: { hue: HueKey | null; size?: number; className?: string }) => {
+  if (!hue) return null;
   const style: React.CSSProperties = {
     width: size,
     height: size,
