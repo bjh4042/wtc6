@@ -2,94 +2,66 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+/* Design system: 따뜻한 나무톤 보드 + 먼셀 10색상환 스톤 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Warm wood board palette */
+    --background: 38 55% 92%;
+    --foreground: 25 35% 18%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 38 60% 96%;
+    --card-foreground: 25 35% 18%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 38 60% 96%;
+    --popover-foreground: 25 35% 18%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 22 70% 52%;
+    --primary-foreground: 40 60% 98%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 38 45% 86%;
+    --secondary-foreground: 25 35% 22%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 38 35% 88%;
+    --muted-foreground: 25 20% 42%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 30 75% 85%;
+    --accent-foreground: 25 35% 22%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 75% 58%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 30 35% 78%;
+    --input: 30 35% 82%;
+    --ring: 22 70% 52%;
 
-    --radius: 0.5rem;
+    --radius: 1rem;
+
+    /* Wood board surface */
+    --board: 36 55% 78%;
+    --board-deep: 28 50% 62%;
+    --board-line: 25 40% 38%;
+    --board-shadow: 25 45% 25%;
+
+    /* Munsell 10 hues — 무광 실리콘 톤 */
+    --hue-red:    358 78% 58%;
+    --hue-orange:  20 90% 60%;
+    --hue-yellow:  46 92% 60%;
+    --hue-lime:    82 65% 55%;
+    --hue-green:  140 55% 48%;
+    --hue-teal:   178 60% 45%;
+    --hue-blue:   210 78% 56%;
+    --hue-indigo: 245 60% 55%;
+    --hue-violet: 275 55% 58%;
+    --hue-magenta:320 65% 58%;
 
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 240 5.3% 26.1%;
-
     --sidebar-primary: 240 5.9% 10%;
-
     --sidebar-primary-foreground: 0 0% 98%;
-
     --sidebar-accent: 240 4.8% 95.9%;
-
     --sidebar-accent-foreground: 240 5.9% 10%;
-
     --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -98,8 +70,75 @@ All colors MUST be HSL.
   * {
     @apply border-border;
   }
-
+  html, body, #root {
+    height: 100%;
+  }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    background:
+      radial-gradient(circle at 20% 10%, hsl(38 70% 95%) 0%, transparent 55%),
+      radial-gradient(circle at 80% 90%, hsl(28 65% 88%) 0%, transparent 55%),
+      hsl(var(--background));
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* Wood grain board */
+  .wood-board {
+    background-color: hsl(var(--board));
+    background-image:
+      repeating-linear-gradient(
+        90deg,
+        hsl(30 50% 70% / 0.35) 0px,
+        hsl(30 50% 70% / 0.35) 1px,
+        transparent 1px,
+        transparent 7px
+      ),
+      repeating-linear-gradient(
+        0deg,
+        hsl(28 45% 62% / 0.18) 0px,
+        hsl(28 45% 62% / 0.18) 2px,
+        transparent 2px,
+        transparent 11px
+      ),
+      radial-gradient(ellipse at 30% 20%, hsl(40 70% 86%) 0%, hsl(var(--board)) 60%, hsl(var(--board-deep)) 100%);
+    box-shadow:
+      inset 0 0 60px hsl(var(--board-shadow) / 0.25),
+      0 12px 32px -10px hsl(var(--board-shadow) / 0.45),
+      0 4px 0 hsl(var(--board-deep));
+  }
+
+  /* Stone — 무광 실리콘 + 흰 윤곽 + 2.5D 그림자 */
+  .stone {
+    background:
+      radial-gradient(circle at 32% 28%, hsl(var(--stone-hue) 95% 78%) 0%, hsl(var(--stone-hue) 75% 55%) 55%, hsl(var(--stone-hue) 70% 42%) 100%);
+    box-shadow:
+      inset 0 -2px 4px hsl(var(--stone-hue) 60% 30% / 0.55),
+      inset 0 1px 2px hsl(0 0% 100% / 0.35),
+      0 2px 4px hsl(25 50% 20% / 0.45),
+      0 0 0 1.5px hsl(0 0% 100% / 0.95);
+  }
+
+  .stone-flat {
+    background: hsl(var(--stone-hue));
+    box-shadow:
+      inset 0 -2px 3px hsl(0 0% 0% / 0.25),
+      inset 0 1px 2px hsl(0 0% 100% / 0.35),
+      0 2px 3px hsl(25 50% 20% / 0.4),
+      0 0 0 1.5px hsl(0 0% 100% / 0.95);
+  }
+
+  .btn-bounce {
+    @apply transition-transform active:scale-95 hover:scale-[1.03];
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: 'Nunito', system-ui, sans-serif;
+    font-weight: 800;
+    letter-spacing: -0.01em;
   }
 }
