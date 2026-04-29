@@ -210,6 +210,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
             players={players}
             lastMove={lastMove}
             winLineSet={winLineSet}
+            winLine={winner?.line ?? null}
+            winnerHue={winnerHue}
             disabled={gameOver}
             onPlace={handlePlace}
           />
@@ -235,27 +237,26 @@ interface BoardGridProps {
   players: Array<{ hue: HueKey }>;
   lastMove: [number, number] | null;
   winLineSet: Set<string>;
+  winLine: Array<[number, number]> | null;
+  winnerHue: HueKey | null;
   disabled: boolean;
   onPlace: (r: number, c: number) => void;
 }
 
-const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: BoardGridProps) => {
-  // The board is rendered as a CSS grid of (BOARD_SIZE) cells where lines pass through cell centers.
-  // Outer padding equals half a cell so the outermost lines/stones sit nicely inside.
+const BoardGrid = ({
+  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, onPlace,
+}: BoardGridProps) => {
   return (
     <div
       className="wood-board rounded-3xl p-3 sm:p-5 w-full"
       style={{ maxWidth: "min(92vh, 720px)" }}
     >
-      <div
-        className="relative w-full aspect-square"
-        style={{
-          // Draw grid lines using gradients — exactly BOARD_SIZE-1 gaps.
-          // We position them so they pass through the centers of the cells.
-        }}
-      >
+      <div className="relative w-full aspect-square">
         {/* Grid lines */}
         <GridLines />
+
+        {/* Win line overlay (SVG) */}
+        {winLine && winnerHue && <WinLineOverlay line={winLine} hue={winnerHue} />}
 
         {/* Click + stone layer */}
         <div
@@ -271,29 +272,35 @@ const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: 
               const isLast = lastMove && lastMove[0] === r && lastMove[1] === c;
               const inWin = winLineSet.has(`${r},${c}`);
               const playerHue = cell !== null ? players[cell].hue : null;
+              const isEmpty = cell === null;
+              const isPlayable = isEmpty && !disabled;
               return (
                 <button
                   key={key}
                   type="button"
-                  aria-label={`${r + 1}행 ${c + 1}열`}
-                  disabled={disabled || cell !== null}
+                  aria-label={`${r + 1}행 ${c + 1}열${isEmpty ? "" : " (이미 놓임)"}`}
+                  disabled={!isPlayable}
                   onClick={() => onPlace(r, c)}
                   className={[
                     "relative flex items-center justify-center group",
                     "focus:outline-none focus-visible:z-10",
-                    cell === null && !disabled ? "cursor-pointer" : "cursor-default",
+                    isPlayable ? "cursor-pointer" : "cursor-not-allowed",
                   ].join(" ")}
                 >
-                  {cell !== null && playerHue && (
+                  {!isEmpty && playerHue && (
                     <Stone
                       hue={playerHue}
                       animated={!!isLast}
                       highlight={inWin}
-                      className="!w-[92%] !h-[92%]"
+                      className={[
+                        "!w-[92%] !h-[92%]",
+                        // 비-승리 라인 돌은 게임 종료 시 살짝 흐리게
+                        disabled && !inWin ? "opacity-55 saturate-75" : "",
+                      ].join(" ")}
                     />
                   )}
-                  {cell === null && !disabled && (
-                    <span className="absolute inset-[18%] rounded-full opacity-0 group-hover:opacity-40 bg-foreground/20 transition-opacity" />
+                  {isPlayable && (
+                    <span className="absolute inset-[20%] rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-foreground/10 ring-2 ring-foreground/30 group-hover:scale-110 transform-gpu duration-150" />
                   )}
                 </button>
               );
@@ -302,6 +309,52 @@ const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: 
         </div>
       </div>
     </div>
+  );
+};
+
+/* 승리 라인 오버레이 — 6목을 굵게 강조 + draw 애니메이션 */
+const WinLineOverlay = ({ line, hue }: { line: Array<[number, number]>; hue: HueKey }) => {
+  const N = BOARD_SIZE;
+  const step = 100 / N;
+  const start = step / 2;
+  const [r1, c1] = line[0];
+  const [r2, c2] = line[line.length - 1];
+  const x1 = start + c1 * step;
+  const y1 = start + r1 * step;
+  const x2 = start + c2 * step;
+  const y2 = start + r2 * step;
+  const color = hueToHsl(hue);
+  return (
+    <svg
+      className="absolute inset-0 w-full h-full pointer-events-none z-10"
+      viewBox="0 0 100 100"
+      preserveAspectRatio="none"
+    >
+      {/* glow halo */}
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={color}
+        strokeWidth="6"
+        strokeLinecap="round"
+        opacity="0.35"
+        vectorEffect="non-scaling-stroke"
+        style={{ filter: "blur(2px)", animation: "win-pulse 0.9s ease-in-out infinite" }}
+      />
+      {/* main bold stroke with draw animation */}
+      <line
+        x1={x1} y1={y1} x2={x2} y2={y2}
+        stroke={color}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        vectorEffect="non-scaling-stroke"
+        pathLength={1}
+        style={{
+          strokeDasharray: 1,
+          strokeDashoffset: 1,
+          animation: "win-line-draw 0.6s ease-out forwards, win-pulse 1.4s 0.6s ease-in-out infinite",
+        }}
+      />
+    </svg>
   );
 };
 
