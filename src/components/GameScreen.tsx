@@ -249,8 +249,6 @@ const BoardGrid = ({ board, players, lastMove, winLineSet, disabled, onPlace }: 
                       hue={playerHue}
                       animated={!!isLast}
                       highlight={inWin}
-                      // Stone fits ~92% of cell
-                      size={undefined as unknown as number}
                       className="!w-[92%] !h-[92%]"
                     />
                   )}
