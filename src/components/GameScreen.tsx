@@ -112,6 +112,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     setDraw(false);
     setLastMove(null);
     setRemaining(timerSeconds);
+    setTimeoutBanner(null);
+    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
   };
 
   const winLineSet = useMemo(() => {
@@ -121,9 +123,24 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
 
   const currentHue = players[current].hue;
   const timerPct = timerEnabled ? Math.max(0, (remaining / timerSeconds) * 100) : 0;
+  const winnerHue = winner ? players[winner.player].hue : null;
 
   return (
     <main className="min-h-screen w-full px-2 py-4 md:px-6 md:py-8 animate-fade-in">
+      {/* Timeout banner */}
+      {timeoutBanner && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-scale-in">
+          <div className="flex items-center gap-3 rounded-2xl border-2 border-destructive/40 bg-card px-5 py-3 shadow-xl">
+            <TimerOff className="w-5 h-5 text-destructive" />
+            <div className="text-sm font-bold">
+              <span className="text-destructive">⏰ {timeoutBanner.from}</span>
+              <span className="text-muted-foreground"> 시간 초과! </span>
+              <span className="text-foreground">{timeoutBanner.to}</span>
+              <span className="text-muted-foreground">의 차례로 넘어갑니다.</span>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="mx-auto w-full max-w-6xl flex flex-col lg:flex-row gap-4 lg:gap-6 items-center lg:items-start">
         {/* Sidebar */}
         <aside className="w-full lg:w-72 flex flex-col gap-4 order-2 lg:order-1">
