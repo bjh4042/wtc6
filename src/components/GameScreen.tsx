@@ -17,13 +17,11 @@ import { ResultModal } from "@/components/ResultModal";
 import { RotateCcw, Timer as TimerIcon } from "lucide-react";
 
 interface GameScreenProps {
-  players: Array<{ hue: HueKey }>;
+  players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
   onExit: () => void;
 }
-
-const PLAYER_LABELS = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
 
 export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: GameScreenProps) => {
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
