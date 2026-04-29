@@ -14,7 +14,11 @@ import { Stone, StoneFlat } from "@/components/Stone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
-import { RotateCcw, Timer as TimerIcon } from "lucide-react";
+import { RotateCcw, Timer as TimerIcon, TimerOff } from "lucide-react";
+
+// hue 키 → CSS hsl() 문자열
+const hueToHsl = (hue: HueKey) =>
+  `hsl(var(--hue-${hue}-h) var(--hue-${hue}-s) var(--hue-${hue}-l))`;
 
 interface GameScreenProps {
   players: Array<{ name: string; hue: HueKey }>;
