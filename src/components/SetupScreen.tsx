@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { HUES, type HueKey, type PlayerConfig } from "@/game/types";
+import { HUES, type HueKey } from "@/game/types";
 import { Stone } from "@/components/Stone";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -14,28 +14,26 @@ import {
 } from "@/components/ui/select";
 import { Sparkles } from "lucide-react";
 
+export interface SetupPlayer {
+  name: string;
+  hue: HueKey | null;
+}
+
 interface SetupScreenProps {
   onStart: (opts: {
-    players: Array<{ hue: HueKey }>;
+    players: Array<{ name: string; hue: HueKey }>;
     timerEnabled: boolean;
     timerSeconds: number;
   }) => void;
 }
 
-const PLAYER_LABELS = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
-
-const ColorOption = ({ hueKey, label }: { hueKey: HueKey; label: string }) => (
-  <div className="flex items-center gap-3">
-    <Stone hue={hueKey} size={22} />
-    <span className="font-bold">{label}</span>
-  </div>
-);
+const DEFAULT_NAMES = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
 
 export const SetupScreen = ({ onStart }: SetupScreenProps) => {
-  const [players, setPlayers] = useState<PlayerConfig[]>([
-    { id: 0, hue: null },
-    { id: 1, hue: null },
-    { id: 2, hue: null },
+  const [players, setPlayers] = useState<SetupPlayer[]>([
+    { name: DEFAULT_NAMES[0], hue: null },
+    { name: DEFAULT_NAMES[1], hue: null },
+    { name: DEFAULT_NAMES[2], hue: null },
   ]);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
@@ -43,16 +41,24 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const setPlayerHue = (idx: number, hue: HueKey) => {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
   };
+  const setPlayerName = (idx: number, name: string) => {
+    setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, name } : p)));
+  };
 
   const takenBy = (idx: number) =>
     players.filter((_, i) => i !== idx).map((p) => p.hue).filter(Boolean) as HueKey[];
 
   const allChosen = players.every((p) => p.hue !== null);
+  const allNamed = players.every((p) => p.name.trim().length > 0);
+  const canStart = allChosen && allNamed;
 
   const handleStart = () => {
-    if (!allChosen) return;
+    if (!canStart) return;
     onStart({
-      players: players.map((p) => ({ hue: p.hue! })),
+      players: players.map((p, i) => ({
+        name: p.name.trim() || DEFAULT_NAMES[i],
+        hue: p.hue!,
+      })),
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
     });
@@ -74,7 +80,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
         <section className="grid gap-6 md:grid-cols-[1fr_auto] items-start bg-card rounded-3xl p-6 md:p-8 shadow-[0_8px_32px_-12px_hsl(var(--board-shadow)/0.35)] border-2 border-border">
           {/* Players */}
           <div>
-            <h2 className="font-display text-xl mb-4">플레이어 색상 선택</h2>
+            <h2 className="font-display text-xl mb-4">플레이어 설정</h2>
             <div className="grid gap-3 sm:grid-cols-3">
               {players.map((p, idx) => {
                 const taken = takenBy(idx);
@@ -83,17 +89,30 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                   : undefined;
                 return (
                   <div
-                    key={p.id}
+                    key={idx}
                     className="rounded-2xl p-4 border-2 border-border bg-background flex flex-col items-center gap-3"
                   >
-                    <span className="text-sm font-bold">{PLAYER_LABELS[idx]}</span>
-                    <div className="h-12 flex items-center justify-center">
+                    <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                      P{idx + 1}
+                    </span>
+                    <div className="h-14 flex items-center justify-center">
                       {p.hue ? (
-                        <Stone hue={p.hue} size={44} animated key={p.hue} />
+                        <Stone hue={p.hue} size={52} animated key={p.hue} />
                       ) : (
                         <span className="text-xs text-muted-foreground">색상 미선택</span>
                       )}
                     </div>
+
+                    {/* 이름 입력 */}
+                    <Input
+                      value={p.name}
+                      onChange={(e) => setPlayerName(idx, e.target.value)}
+                      maxLength={12}
+                      placeholder={DEFAULT_NAMES[idx]}
+                      className="rounded-xl border-2 font-bold text-center h-10 bg-card"
+                    />
+
+                    {/* 색상 드롭다운 */}
                     <Select
                       value={p.hue ?? undefined}
                       onValueChange={(v) => setPlayerHue(idx, v as HueKey)}
@@ -101,7 +120,10 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                       <SelectTrigger className="w-full rounded-xl border-2 font-bold h-11 bg-card">
                         <SelectValue placeholder="색상 선택">
                           {p.hue && selectedLabel && (
-                            <ColorOption hueKey={p.hue} label={selectedLabel} />
+                            <div className="flex items-center gap-3">
+                              <Stone hue={p.hue} size={22} />
+                              <span className="font-bold">{selectedLabel}</span>
+                            </div>
                           )}
                         </SelectValue>
                       </SelectTrigger>
@@ -161,11 +183,11 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
 
             <Button
               size="lg"
-              disabled={!allChosen}
+              disabled={!canStart}
               onClick={handleStart}
               className="btn-bounce h-14 text-lg font-display rounded-2xl shadow-lg"
             >
-              {allChosen ? "🎮 게임 시작!" : "3명 모두 색상을 골라주세요"}
+              {canStart ? "🎮 게임 시작!" : !allChosen ? "3명 모두 색상을 골라주세요" : "이름을 입력해주세요"}
             </Button>
           </aside>
         </section>
