@@ -43,17 +43,17 @@
     --board-line: 25 40% 38%;
     --board-shadow: 25 45% 25%;
 
-    /* Munsell 10 hues — 무광 실리콘 톤 */
-    --hue-red:    358 78% 58%;
-    --hue-orange:  20 90% 60%;
-    --hue-yellow:  46 92% 60%;
-    --hue-lime:    82 65% 55%;
-    --hue-green:  140 55% 48%;
-    --hue-teal:   178 60% 45%;
-    --hue-blue:   210 78% 56%;
-    --hue-indigo: 245 60% 55%;
-    --hue-violet: 275 55% 58%;
-    --hue-magenta:320 65% 58%;
+    /* Munsell 10 hues — H S L 분리 (각 채널별 변수) */
+    --hue-red-h: 358;    --hue-red-s: 78%;    --hue-red-l: 58%;
+    --hue-orange-h: 20;  --hue-orange-s: 90%; --hue-orange-l: 60%;
+    --hue-yellow-h: 46;  --hue-yellow-s: 92%; --hue-yellow-l: 60%;
+    --hue-lime-h: 82;    --hue-lime-s: 65%;   --hue-lime-l: 55%;
+    --hue-green-h: 140;  --hue-green-s: 55%;  --hue-green-l: 48%;
+    --hue-teal-h: 178;   --hue-teal-s: 60%;   --hue-teal-l: 45%;
+    --hue-blue-h: 210;   --hue-blue-s: 78%;   --hue-blue-l: 56%;
+    --hue-indigo-h: 245; --hue-indigo-s: 60%; --hue-indigo-l: 55%;
+    --hue-violet-h: 275; --hue-violet-s: 55%; --hue-violet-l: 58%;
+    --hue-magenta-h: 320;--hue-magenta-s: 65%;--hue-magenta-l: 58%;
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -85,44 +85,34 @@
 }
 
 @layer components {
-  /* Wood grain board */
+  /* Wood grain board — 큰 격자만 (잔 격자 제거), 따뜻한 나무 톤 유지 */
   .wood-board {
     background-color: hsl(var(--board));
     background-image:
-      repeating-linear-gradient(
-        90deg,
-        hsl(30 50% 70% / 0.35) 0px,
-        hsl(30 50% 70% / 0.35) 1px,
-        transparent 1px,
-        transparent 7px
-      ),
-      repeating-linear-gradient(
-        0deg,
-        hsl(28 45% 62% / 0.18) 0px,
-        hsl(28 45% 62% / 0.18) 2px,
-        transparent 2px,
-        transparent 11px
-      ),
-      radial-gradient(ellipse at 30% 20%, hsl(40 70% 86%) 0%, hsl(var(--board)) 60%, hsl(var(--board-deep)) 100%);
+      radial-gradient(ellipse at 30% 20%, hsl(40 70% 88%) 0%, hsl(var(--board)) 55%, hsl(var(--board-deep)) 100%);
     box-shadow:
       inset 0 0 60px hsl(var(--board-shadow) / 0.25),
       0 12px 32px -10px hsl(var(--board-shadow) / 0.45),
       0 4px 0 hsl(var(--board-deep));
   }
 
-  /* Stone — 무광 실리콘 + 흰 윤곽 + 2.5D 그림자 */
+  /* Stone — 무광 실리콘 + 흰 윤곽 + 2.5D 그림자
+     사용: style={{ '--h': ..., '--s': ..., '--l': ... }} */
   .stone {
     background:
-      radial-gradient(circle at 32% 28%, hsl(var(--stone-hue) 95% 78%) 0%, hsl(var(--stone-hue) 75% 55%) 55%, hsl(var(--stone-hue) 70% 42%) 100%);
+      radial-gradient(circle at 32% 28%,
+        hsl(var(--h) calc(var(--s)) calc(var(--l) + 18%)) 0%,
+        hsl(var(--h) var(--s) var(--l)) 55%,
+        hsl(var(--h) var(--s) calc(var(--l) - 14%)) 100%);
     box-shadow:
-      inset 0 -2px 4px hsl(var(--stone-hue) 60% 30% / 0.55),
-      inset 0 1px 2px hsl(0 0% 100% / 0.35),
+      inset 0 -2px 4px hsl(var(--h) var(--s) calc(var(--l) - 28%) / 0.55),
+      inset 0 1px 2px hsl(0 0% 100% / 0.4),
       0 2px 4px hsl(25 50% 20% / 0.45),
       0 0 0 1.5px hsl(0 0% 100% / 0.95);
   }
 
   .stone-flat {
-    background: hsl(var(--stone-hue));
+    background: hsl(var(--h) var(--s) var(--l));
     box-shadow:
       inset 0 -2px 3px hsl(0 0% 0% / 0.25),
       inset 0 1px 2px hsl(0 0% 100% / 0.35),
