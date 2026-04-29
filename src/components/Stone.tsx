@@ -1,5 +1,11 @@
 import { HUES, type HueKey } from "@/game/types";
 
+const hueStyle = (hue: HueKey): React.CSSProperties => ({
+  ["--h" as any]: `var(--hue-${hue}-h)`,
+  ["--s" as any]: `var(--hue-${hue}-s)`,
+  ["--l" as any]: `var(--hue-${hue}-l)`,
+});
+
 interface StoneProps {
   hue: HueKey | null;
   size?: number; // px; if omitted, sizing comes from className
@@ -8,13 +14,9 @@ interface StoneProps {
   highlight?: boolean;
 }
 
-const hueVar = (hue: HueKey) => HUES.find((h) => h.key === hue)?.varName ?? "hue-red";
-
 export const Stone = ({ hue, size, className = "", animated = false, highlight = false }: StoneProps) => {
   if (!hue) return null;
-  const style: React.CSSProperties = {
-    ["--stone-hue" as any]: `var(--${hueVar(hue)})`,
-  };
+  const style: React.CSSProperties = { ...hueStyle(hue) };
   if (size !== undefined) {
     style.width = size;
     style.height = size;
@@ -35,10 +37,9 @@ export const Stone = ({ hue, size, className = "", animated = false, highlight =
 
 export const StoneFlat = ({ hue, size = 22, className = "" }: { hue: HueKey | null; size?: number; className?: string }) => {
   if (!hue) return null;
-  const style: React.CSSProperties = {
-    width: size,
-    height: size,
-    ["--stone-hue" as any]: `hsl(var(--${hueVar(hue)}))`,
-  };
+  const style: React.CSSProperties = { ...hueStyle(hue), width: size, height: size };
   return <span aria-hidden style={style} className={`stone-flat inline-block rounded-full ${className}`} />;
 };
+
+// 사용 정보를 export — 라벨 등 외부에서 활용
+export { HUES };
