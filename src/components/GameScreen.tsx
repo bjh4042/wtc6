@@ -24,13 +24,16 @@ interface GameScreenProps {
   players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
-  firstPlayer: PlayerId;
+  turnOrder: [PlayerId, PlayerId, PlayerId];
   onExit: () => void;
 }
 
-export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, onExit }: GameScreenProps) => {
+export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onExit }: GameScreenProps) => {
+  const order = turnOrder ?? ([0, 1, 2] as [PlayerId, PlayerId, PlayerId]);
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
-  const [current, setCurrent] = useState<PlayerId>((firstPlayer ?? 0) as PlayerId);
+  // turnPos: 순서 슬롯 (0/1/2). 실제 플레이어 = order[turnPos]
+  const [turnPos, setTurnPos] = useState<0 | 1 | 2>(0);
+  const current = order[turnPos];
   // Connect6: 첫 턴 1수, 이후 매 턴 2수
   const [stonesLeft, setStonesLeft] = useState<number>(1);
   const [turnIndex, setTurnIndex] = useState<number>(0); // 0이면 첫 턴
@@ -45,15 +48,15 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
   const gameOver = winner !== null || draw;
 
   const advanceTurn = () => {
-    setCurrent((p) => (((p + 1) % 3) as PlayerId));
+    setTurnPos((p) => (((p + 1) % 3) as 0 | 1 | 2));
     setTurnIndex((t) => t + 1);
     setStonesLeft(2); // 첫 턴 이후는 모두 2개씩
     setRemaining(timerSeconds);
   };
 
-  const showTimeoutBanner = (fromIdx: PlayerId) => {
-    const toIdx = ((fromIdx + 1) % 3) as PlayerId;
-    setTimeoutBanner({ from: players[fromIdx].name, to: players[toIdx].name });
+  const showTimeoutBanner = (fromPos: 0 | 1 | 2) => {
+    const toPos = ((fromPos + 1) % 3) as 0 | 1 | 2;
+    setTimeoutBanner({ from: players[order[fromPos]].name, to: players[order[toPos]].name });
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
     bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
   };
