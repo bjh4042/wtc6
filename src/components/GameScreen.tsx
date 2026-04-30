@@ -73,9 +73,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
         if (r <= 1) {
           // turn pass — 배너 표시 후 다음 턴으로 (남은 돌 수와 무관하게 턴 종료)
           window.setTimeout(() => {
-            setCurrent((cur) => {
+            setTurnPos((cur) => {
               showTimeoutBanner(cur);
-              return ((cur + 1) % 3) as PlayerId;
+              return ((cur + 1) % 3) as 0 | 1 | 2;
             });
             setTurnIndex((t) => t + 1);
             setStonesLeft(2);
