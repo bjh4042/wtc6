@@ -43,6 +43,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [turnOrder, setTurnOrder] = useState<[PIdx, PIdx, PIdx]>([0, 1, 2]);
+  const [turnSelected, setTurnSelected] = useState<[boolean, boolean, boolean]>([false, false, false]);
 
   // 특정 슬롯(0/1/2 = 첫/둘/셋째 차례)에 플레이어 idx를 배정하면서 자리 충돌은 자동 스왑
   const assignTurn = (slot: 0 | 1 | 2, playerIdx: PIdx) => {
@@ -54,7 +55,13 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       next[currentSlot] = displaced;
       return next;
     });
+    setTurnSelected((prev) => {
+      const next = [...prev] as [boolean, boolean, boolean];
+      next[slot] = true;
+      return next;
+    });
   };
+  const allTurnsSelected = turnSelected.every(Boolean);
 
   const setPlayerHue = (idx: number, hue: HueKey) => {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
