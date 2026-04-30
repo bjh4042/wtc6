@@ -58,12 +58,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
     bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
   };
 
-  const showTimeoutBanner = (fromIdx: PlayerId) => {
-    const toIdx = ((fromIdx + 1) % 3) as PlayerId;
-    setTimeoutBanner({ from: players[fromIdx].name, to: players[toIdx].name });
-    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
-    bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
-  };
+
+
 
   // Timer
   useEffect(() => {
