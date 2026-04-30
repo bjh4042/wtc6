@@ -121,7 +121,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       })),
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
-      firstPlayer,
+      turnOrder,
     });
   };
 
