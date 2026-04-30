@@ -124,7 +124,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
 
   const reset = () => {
     setBoard(createEmptyBoard());
-    setCurrent(firstPlayer);
+    setCurrent(((firstPlayer ?? 0) as PlayerId));
     setTurnIndex(0);
     setStonesLeft(1);
     setWinner(null);
