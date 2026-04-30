@@ -7,7 +7,7 @@ interface GameSettings {
   players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
-  firstPlayer: PlayerId;
+  turnOrder: [PlayerId, PlayerId, PlayerId];
 }
 
 const Index = () => {
@@ -18,7 +18,7 @@ const Index = () => {
       players={settings.players}
       timerEnabled={settings.timerEnabled}
       timerSeconds={settings.timerSeconds}
-      firstPlayer={settings.firstPlayer}
+      turnOrder={settings.turnOrder}
       onExit={() => setSettings(null)}
     />
   ) : (
