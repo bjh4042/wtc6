@@ -336,7 +336,8 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
             <Button
               size="lg"
               onClick={handleStart}
-              className="btn-bounce h-14 text-lg font-display rounded-2xl shadow-lg"
+              disabled={issues.length > 0}
+              className="btn-bounce h-14 text-lg font-display rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               🎮 게임 시작!
             </Button>
