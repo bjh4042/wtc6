@@ -72,12 +72,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
     intervalRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // turn pass — 배너 표시 후 다음 턴으로
+          // turn pass — 배너 표시 후 다음 턴으로 (남은 돌 수와 무관하게 턴 종료)
           window.setTimeout(() => {
             setCurrent((cur) => {
               showTimeoutBanner(cur);
               return ((cur + 1) % 3) as PlayerId;
             });
+            setTurnIndex((t) => t + 1);
+            setStonesLeft(2);
             setRemaining(timerSeconds);
           }, 0);
           return timerSeconds;
@@ -100,6 +102,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
   const handlePlace = (r: number, c: number) => {
     if (gameOver) return;
     if (board[r][c] !== null) return;
+    if (stonesLeft <= 0) return;
 
     const next = board.map((row) => row.slice());
     next[r][c] = current;
@@ -115,12 +118,19 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
       setDraw(true);
       return;
     }
+    // 같은 턴에 남은 돌이 더 있으면 같은 플레이어가 계속
+    if (stonesLeft > 1) {
+      setStonesLeft((s) => s - 1);
+      return;
+    }
     advanceTurn();
   };
 
   const reset = () => {
     setBoard(createEmptyBoard());
-    setCurrent(0);
+    setCurrent(firstPlayer);
+    setTurnIndex(0);
+    setStonesLeft(1);
     setWinner(null);
     setDraw(false);
     setLastMove(null);
