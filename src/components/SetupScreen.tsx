@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, AlertCircle } from "lucide-react";
+import { Sparkles, AlertCircle, Flag } from "lucide-react";
 
 export interface SetupPlayer {
   name: string;
@@ -25,6 +25,7 @@ interface SetupScreenProps {
     players: Array<{ name: string; hue: HueKey }>;
     timerEnabled: boolean;
     timerSeconds: number;
+    firstPlayer: 0 | 1 | 2;
   }) => void;
 }
 
@@ -38,6 +39,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   ]);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
+  const [firstPlayer, setFirstPlayer] = useState<0 | 1 | 2>(0);
 
   const setPlayerHue = (idx: number, hue: HueKey) => {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
@@ -104,6 +106,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       })),
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
+      firstPlayer,
     });
   };
 
