@@ -113,10 +113,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     const win = checkWinAt(next, r, c);
     if (win) {
       setWinner(win);
+      setWinFlash(true);
+      window.setTimeout(() => setWinFlash(false), 900);
+      window.setTimeout(() => setShowResult(true), 1800);
       return;
     }
     if (isBoardFull(next)) {
       setDraw(true);
+      window.setTimeout(() => setShowResult(true), 600);
       return;
     }
     // 같은 턴에 남은 돌이 더 있으면 같은 플레이어가 계속
