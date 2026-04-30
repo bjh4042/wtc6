@@ -24,12 +24,16 @@ interface GameScreenProps {
   players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
+  firstPlayer: PlayerId;
   onExit: () => void;
 }
 
-export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: GameScreenProps) => {
+export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, onExit }: GameScreenProps) => {
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
-  const [current, setCurrent] = useState<PlayerId>(0);
+  const [current, setCurrent] = useState<PlayerId>(firstPlayer);
+  // Connect6: 첫 턴 1수, 이후 매 턴 2수
+  const [stonesLeft, setStonesLeft] = useState<number>(1);
+  const [turnIndex, setTurnIndex] = useState<number>(0); // 0이면 첫 턴
   const [winner, setWinner] = useState<WinResult | null>(null);
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
@@ -40,9 +44,18 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
 
   const gameOver = winner !== null || draw;
 
-  const advanceTurn = (next?: PlayerId) => {
-    setCurrent((p) => (next !== undefined ? next : (((p + 1) % 3) as PlayerId)));
+  const advanceTurn = () => {
+    setCurrent((p) => (((p + 1) % 3) as PlayerId));
+    setTurnIndex((t) => t + 1);
+    setStonesLeft(2); // 첫 턴 이후는 모두 2개씩
     setRemaining(timerSeconds);
+  };
+
+  const showTimeoutBanner = (fromIdx: PlayerId) => {
+    const toIdx = ((fromIdx + 1) % 3) as PlayerId;
+    setTimeoutBanner({ from: players[fromIdx].name, to: players[toIdx].name });
+    if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+    bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
   };
 
   const showTimeoutBanner = (fromIdx: PlayerId) => {
