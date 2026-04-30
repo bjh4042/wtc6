@@ -138,6 +138,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setStonesLeft(1);
     setWinner(null);
     setDraw(false);
+    setShowResult(false);
+    setWinFlash(false);
     setLastMove(null);
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
