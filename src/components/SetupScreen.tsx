@@ -227,6 +227,42 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
               </div>
             </div>
 
+            <div className="rounded-2xl border-2 border-border p-5 bg-background">
+              <Label className="font-display text-base inline-flex items-center gap-2">
+                <Flag className="w-4 h-4 text-primary" /> 첫 수 플레이어
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                첫 턴엔 1개, 이후 모든 턴은 2개씩 둬요.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {players.map((p, i) => {
+                  const active = firstPlayer === i;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setFirstPlayer(i as 0 | 1 | 2)}
+                      className={[
+                        "btn-bounce rounded-xl border-2 p-2 flex flex-col items-center gap-1 transition-colors",
+                        active
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-card hover:bg-secondary",
+                      ].join(" ")}
+                    >
+                      {p.hue ? (
+                        <Stone hue={p.hue} size={28} />
+                      ) : (
+                        <span className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/40" />
+                      )}
+                      <span className="text-[11px] font-bold truncate max-w-full">
+                        {p.name.trim() || DEFAULT_NAMES[i]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {issues.length > 0 && (
               <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 animate-fade-in">
                 <div className="flex items-center gap-2 mb-2 text-destructive">
