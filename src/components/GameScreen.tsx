@@ -38,6 +38,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   const [stonesLeft, setStonesLeft] = useState<number>(1);
   const [turnIndex, setTurnIndex] = useState<number>(0); // 0이면 첫 턴
   const [winner, setWinner] = useState<WinResult | null>(null);
+  const [showResult, setShowResult] = useState(false);
+  const [winFlash, setWinFlash] = useState(false);
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
   const [remaining, setRemaining] = useState(timerSeconds);
@@ -111,10 +113,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     const win = checkWinAt(next, r, c);
     if (win) {
       setWinner(win);
+      setWinFlash(true);
+      window.setTimeout(() => setWinFlash(false), 900);
+      window.setTimeout(() => setShowResult(true), 1800);
       return;
     }
     if (isBoardFull(next)) {
       setDraw(true);
+      window.setTimeout(() => setShowResult(true), 600);
       return;
     }
     // 같은 턴에 남은 돌이 더 있으면 같은 플레이어가 계속
@@ -132,6 +138,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setStonesLeft(1);
     setWinner(null);
     setDraw(false);
+    setShowResult(false);
+    setWinFlash(false);
     setLastMove(null);
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
@@ -249,8 +257,13 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
         </div>
       </div>
 
+      {/* 승리 연출: 화면 플래시 + 컨페티 */}
+      {winner && winnerHue && (
+        <WinCelebration flash={winFlash} hue={winnerHue} active={!showResult} />
+      )}
+
       <ResultModal
-        open={gameOver}
+        open={showResult}
         winner={winner}
         draw={draw}
         players={players}
@@ -258,6 +271,59 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
         onExit={onExit}
       />
     </main>
+  );
+};
+
+/* --------------------- Win celebration overlay --------------------- */
+
+const WinCelebration = ({
+  flash,
+  hue,
+  active,
+}: {
+  flash: boolean;
+  hue: HueKey;
+  active: boolean;
+}) => {
+  const hueDef = HUES.find((h) => h.key === hue);
+  const color = hueDef ? `hsl(var(--${hueDef.varName}))` : "hsl(var(--primary))";
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 28 }).map((_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.4,
+        duration: 1.2 + Math.random() * 0.9,
+        rotate: Math.random() * 360,
+        size: 8 + Math.random() * 10,
+      })),
+    [],
+  );
+  return (
+    <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
+      {flash && (
+        <div
+          className="absolute inset-0 animate-fade-out"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${color}55, transparent 60%)` }}
+        />
+      )}
+      {active &&
+        pieces.map((p, i) => (
+          <span
+            key={i}
+            className="absolute block rounded-sm"
+            style={{
+              left: `${p.left}%`,
+              top: "-5%",
+              width: p.size,
+              height: p.size,
+              backgroundColor: color,
+              transform: `rotate(${p.rotate}deg)`,
+              animation: `confetti-fall ${p.duration}s ${p.delay}s ease-in forwards`,
+              opacity: 0.9,
+            }}
+          />
+        ))}
+    </div>
   );
 };
 
