@@ -277,21 +277,23 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                         {ORDER_LABELS[slot]}
                       </span>
                       <Select
-                        value={String(playerIdx)}
+                        value={turnSelected[slotIdx] ? String(playerIdx) : undefined}
                         onValueChange={(v) => assignTurn(slotIdx, Number(v) as PIdx)}
                       >
                         <SelectTrigger className="rounded-lg border-2 font-bold h-10 bg-background">
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              {p.hue ? (
-                                <Stone hue={p.hue} size={20} />
-                              ) : (
-                                <span className="w-5 h-5 rounded-full border-2 border-dashed border-muted-foreground/40" />
-                              )}
-                              <span className="font-bold truncate">
-                                {p.name.trim() || DEFAULT_NAMES[playerIdx]}
-                              </span>
-                            </div>
+                          <SelectValue placeholder="플레이어 선택">
+                            {turnSelected[slotIdx] && (
+                              <div className="flex items-center gap-2">
+                                {p.hue ? (
+                                  <Stone hue={p.hue} size={20} />
+                                ) : (
+                                  <span className="w-5 h-5 rounded-full border-2 border-dashed border-muted-foreground/40" />
+                                )}
+                                <span className="font-bold truncate">
+                                  {p.name.trim() || DEFAULT_NAMES[playerIdx]}
+                                </span>
+                              </div>
+                            )}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
