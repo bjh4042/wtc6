@@ -43,6 +43,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [turnOrder, setTurnOrder] = useState<[PIdx, PIdx, PIdx]>([0, 1, 2]);
+  const [turnSelected, setTurnSelected] = useState<[boolean, boolean, boolean]>([false, false, false]);
 
   // 특정 슬롯(0/1/2 = 첫/둘/셋째 차례)에 플레이어 idx를 배정하면서 자리 충돌은 자동 스왑
   const assignTurn = (slot: 0 | 1 | 2, playerIdx: PIdx) => {
@@ -54,7 +55,13 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       next[currentSlot] = displaced;
       return next;
     });
+    setTurnSelected((prev) => {
+      const next = [...prev] as [boolean, boolean, boolean];
+      next[slot] = true;
+      return next;
+    });
   };
+  const allTurnsSelected = turnSelected.every(Boolean);
 
   const setPlayerHue = (idx: number, hue: HueKey) => {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
@@ -104,8 +111,15 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
         list.push(`색상 "${label}"이(가) 중복됐어요 (${arr.map((i) => `P${i + 1}`).join(", ")}).`);
       }
     });
+    if (!allTurnsSelected) {
+      const missing = turnSelected
+        .map((s, i) => (!s ? ORDER_LABELS[i] : null))
+        .filter(Boolean)
+        .join(", ");
+      list.push(`턴 순서를 선택해주세요 (${missing}).`);
+    }
     return list;
-  }, [players]);
+  }, [players, turnSelected, allTurnsSelected]);
 
   const handleStart = () => {
     if (issues.length > 0) {
@@ -263,21 +277,23 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                         {ORDER_LABELS[slot]}
                       </span>
                       <Select
-                        value={String(playerIdx)}
+                        value={turnSelected[slotIdx] ? String(playerIdx) : undefined}
                         onValueChange={(v) => assignTurn(slotIdx, Number(v) as PIdx)}
                       >
                         <SelectTrigger className="rounded-lg border-2 font-bold h-10 bg-background">
-                          <SelectValue>
-                            <div className="flex items-center gap-2">
-                              {p.hue ? (
-                                <Stone hue={p.hue} size={20} />
-                              ) : (
-                                <span className="w-5 h-5 rounded-full border-2 border-dashed border-muted-foreground/40" />
-                              )}
-                              <span className="font-bold truncate">
-                                {p.name.trim() || DEFAULT_NAMES[playerIdx]}
-                              </span>
-                            </div>
+                          <SelectValue placeholder="플레이어 선택">
+                            {turnSelected[slotIdx] && (
+                              <div className="flex items-center gap-2">
+                                {p.hue ? (
+                                  <Stone hue={p.hue} size={20} />
+                                ) : (
+                                  <span className="w-5 h-5 rounded-full border-2 border-dashed border-muted-foreground/40" />
+                                )}
+                                <span className="font-bold truncate">
+                                  {p.name.trim() || DEFAULT_NAMES[playerIdx]}
+                                </span>
+                              </div>
+                            )}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
@@ -320,7 +336,8 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
             <Button
               size="lg"
               onClick={handleStart}
-              className="btn-bounce h-14 text-lg font-display rounded-2xl shadow-lg"
+              disabled={issues.length > 0}
+              className="btn-bounce h-14 text-lg font-display rounded-2xl shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
               🎮 게임 시작!
             </Button>
