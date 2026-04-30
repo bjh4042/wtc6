@@ -257,8 +257,13 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
         </div>
       </div>
 
+      {/* 승리 연출: 화면 플래시 + 컨페티 */}
+      {winner && winnerHue && (
+        <WinCelebration flash={winFlash} hue={winnerHue} active={!showResult} />
+      )}
+
       <ResultModal
-        open={gameOver}
+        open={showResult}
         winner={winner}
         draw={draw}
         players={players}
@@ -266,6 +271,59 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
         onExit={onExit}
       />
     </main>
+  );
+};
+
+/* --------------------- Win celebration overlay --------------------- */
+
+const WinCelebration = ({
+  flash,
+  hue,
+  active,
+}: {
+  flash: boolean;
+  hue: HueKey;
+  active: boolean;
+}) => {
+  const hueDef = HUES.find((h) => h.key === hue);
+  const color = hueDef ? `hsl(${hueDef.h} ${hueDef.s}% ${hueDef.l}%)` : "hsl(var(--primary))";
+  const pieces = useMemo(
+    () =>
+      Array.from({ length: 28 }).map((_, i) => ({
+        left: Math.random() * 100,
+        delay: Math.random() * 0.4,
+        duration: 1.2 + Math.random() * 0.9,
+        rotate: Math.random() * 360,
+        size: 8 + Math.random() * 10,
+      })),
+    [],
+  );
+  return (
+    <div className="pointer-events-none fixed inset-0 z-40 overflow-hidden">
+      {flash && (
+        <div
+          className="absolute inset-0 animate-fade-out"
+          style={{ background: `radial-gradient(circle at 50% 50%, ${color}55, transparent 60%)` }}
+        />
+      )}
+      {active &&
+        pieces.map((p, i) => (
+          <span
+            key={i}
+            className="absolute block rounded-sm"
+            style={{
+              left: `${p.left}%`,
+              top: "-5%",
+              width: p.size,
+              height: p.size,
+              backgroundColor: color,
+              transform: `rotate(${p.rotate}deg)`,
+              animation: `confetti-fall ${p.duration}s ${p.delay}s ease-in forwards`,
+              opacity: 0.9,
+            }}
+          />
+        ))}
+    </div>
   );
 };
 
