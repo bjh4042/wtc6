@@ -25,9 +25,12 @@ interface SetupScreenProps {
     players: Array<{ name: string; hue: HueKey }>;
     timerEnabled: boolean;
     timerSeconds: number;
-    firstPlayer: 0 | 1 | 2;
+    turnOrder: [0 | 1 | 2, 0 | 1 | 2, 0 | 1 | 2];
   }) => void;
 }
+
+type PIdx = 0 | 1 | 2;
+const ORDER_LABELS = ["첫 번째", "두 번째", "세 번째"] as const;
 
 const DEFAULT_NAMES = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
 
