@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { SetupScreen } from "@/components/SetupScreen";
 import { GameScreen } from "@/components/GameScreen";
-import type { HueKey } from "@/game/types";
+import type { HueKey, PlayerId } from "@/game/types";
 
 interface GameSettings {
   players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
+  firstPlayer: PlayerId;
 }
 
 const Index = () => {
@@ -17,6 +18,7 @@ const Index = () => {
       players={settings.players}
       timerEnabled={settings.timerEnabled}
       timerSeconds={settings.timerSeconds}
+      firstPlayer={settings.firstPlayer}
       onExit={() => setSettings(null)}
     />
   ) : (
