@@ -25,9 +25,12 @@ interface SetupScreenProps {
     players: Array<{ name: string; hue: HueKey }>;
     timerEnabled: boolean;
     timerSeconds: number;
-    firstPlayer: 0 | 1 | 2;
+    turnOrder: [0 | 1 | 2, 0 | 1 | 2, 0 | 1 | 2];
   }) => void;
 }
+
+type PIdx = 0 | 1 | 2;
+const ORDER_LABELS = ["첫 번째", "두 번째", "세 번째"] as const;
 
 const DEFAULT_NAMES = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
 
@@ -39,7 +42,19 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   ]);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
-  const [firstPlayer, setFirstPlayer] = useState<0 | 1 | 2>(0);
+  const [turnOrder, setTurnOrder] = useState<[PIdx, PIdx, PIdx]>([0, 1, 2]);
+
+  // 특정 슬롯(0/1/2 = 첫/둘/셋째 차례)에 플레이어 idx를 배정하면서 자리 충돌은 자동 스왑
+  const assignTurn = (slot: 0 | 1 | 2, playerIdx: PIdx) => {
+    setTurnOrder((prev) => {
+      const next = [...prev] as [PIdx, PIdx, PIdx];
+      const currentSlot = next.indexOf(playerIdx) as 0 | 1 | 2;
+      const displaced = next[slot];
+      next[slot] = playerIdx;
+      next[currentSlot] = displaced;
+      return next;
+    });
+  };
 
   const setPlayerHue = (idx: number, hue: HueKey) => {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
@@ -106,7 +121,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       })),
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
-      firstPlayer,
+      turnOrder,
     });
   };
 
@@ -229,35 +244,60 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
 
             <div className="rounded-2xl border-2 border-border p-5 bg-background">
               <Label className="font-display text-base inline-flex items-center gap-2">
-                <Flag className="w-4 h-4 text-primary" /> 첫 수 플레이어
+                <Flag className="w-4 h-4 text-primary" /> 턴 순서
               </Label>
               <p className="text-xs text-muted-foreground mt-1 mb-3">
                 첫 턴엔 1개, 이후 모든 턴은 2개씩 둬요.
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {players.map((p, i) => {
-                  const active = firstPlayer === i;
+              <div className="space-y-2">
+                {[0, 1, 2].map((slot) => {
+                  const slotIdx = slot as 0 | 1 | 2;
+                  const playerIdx = turnOrder[slotIdx];
+                  const p = players[playerIdx];
                   return (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setFirstPlayer(i as 0 | 1 | 2)}
-                      className={[
-                        "btn-bounce rounded-xl border-2 p-2 flex flex-col items-center gap-1 transition-colors",
-                        active
-                          ? "border-primary bg-primary/10"
-                          : "border-border bg-card hover:bg-secondary",
-                      ].join(" ")}
+                    <div
+                      key={slot}
+                      className="flex items-center gap-2 rounded-xl border-2 border-border bg-card p-2"
                     >
-                      {p.hue ? (
-                        <Stone hue={p.hue} size={28} />
-                      ) : (
-                        <span className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/40" />
-                      )}
-                      <span className="text-[11px] font-bold truncate max-w-full">
-                        {p.name.trim() || DEFAULT_NAMES[i]}
+                      <span className="text-[11px] font-display w-12 text-center text-primary shrink-0">
+                        {ORDER_LABELS[slot]}
                       </span>
-                    </button>
+                      <Select
+                        value={String(playerIdx)}
+                        onValueChange={(v) => assignTurn(slotIdx, Number(v) as PIdx)}
+                      >
+                        <SelectTrigger className="rounded-lg border-2 font-bold h-10 bg-background">
+                          <SelectValue>
+                            <div className="flex items-center gap-2">
+                              {p.hue ? (
+                                <Stone hue={p.hue} size={20} />
+                              ) : (
+                                <span className="w-5 h-5 rounded-full border-2 border-dashed border-muted-foreground/40" />
+                              )}
+                              <span className="font-bold truncate">
+                                {p.name.trim() || DEFAULT_NAMES[playerIdx]}
+                              </span>
+                            </div>
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent className="rounded-xl">
+                          {players.map((pp, i) => (
+                            <SelectItem key={i} value={String(i)} className="rounded-lg my-0.5">
+                              <div className="flex items-center gap-2">
+                                {pp.hue ? (
+                                  <Stone hue={pp.hue} size={18} />
+                                ) : (
+                                  <span className="w-4 h-4 rounded-full border-2 border-dashed border-muted-foreground/40" />
+                                )}
+                                <span className="font-bold">
+                                  {pp.name.trim() || DEFAULT_NAMES[i]}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   );
                 })}
               </div>
