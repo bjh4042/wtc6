@@ -30,7 +30,7 @@ interface GameScreenProps {
 
 export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, onExit }: GameScreenProps) => {
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
-  const [current, setCurrent] = useState<PlayerId>(firstPlayer);
+  const [current, setCurrent] = useState<PlayerId>((firstPlayer ?? 0) as PlayerId);
   // Connect6: 첫 턴 1수, 이후 매 턴 2수
   const [stonesLeft, setStonesLeft] = useState<number>(1);
   const [turnIndex, setTurnIndex] = useState<number>(0); // 0이면 첫 턴
@@ -140,9 +140,12 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
     return new Set(winner.line.map(([r, c]) => `${r},${c}`));
   }, [winner]);
 
-  const currentHue = players[current].hue;
+  const safeCurrent = (players[current] ? current : 0) as PlayerId;
+  const currentHue = players[safeCurrent]?.hue;
   const timerPct = timerEnabled ? Math.max(0, (remaining / timerSeconds) * 100) : 0;
-  const winnerHue = winner ? players[winner.player].hue : null;
+  const winnerHue = winner && players[winner.player] ? players[winner.player].hue : null;
+
+  if (!currentHue) return null;
 
   return (
     <main className="min-h-screen w-full px-2 py-4 md:px-6 md:py-8 animate-fade-in">
