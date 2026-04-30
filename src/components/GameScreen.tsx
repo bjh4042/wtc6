@@ -167,11 +167,17 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, o
           <div className="rounded-3xl border-2 border-border bg-card p-5 shadow-md">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">현재 턴</p>
             <div className="mt-2 flex items-center gap-3">
-              <Stone hue={currentHue} size={40} animated key={`turn-${current}`} />
-              <div>
-                <p className="font-display text-xl">{players[current].name}</p>
+              <Stone hue={currentHue} size={40} animated key={`turn-${current}-${stonesLeft}`} />
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-xl truncate">{players[current].name}</p>
                 <p className="text-xs text-muted-foreground">
                   {HUES.find((h) => h.key === currentHue)?.label}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">남은 돌</p>
+                <p className="font-display text-2xl tabular-nums text-primary">
+                  {stonesLeft}<span className="text-sm text-muted-foreground">/{turnIndex === 0 ? 1 : 2}</span>
                 </p>
               </div>
             </div>
