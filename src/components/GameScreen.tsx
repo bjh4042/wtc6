@@ -286,7 +286,7 @@ const WinCelebration = ({
   active: boolean;
 }) => {
   const hueDef = HUES.find((h) => h.key === hue);
-  const color = hueDef ? `hsl(${hueDef.h} ${hueDef.s}% ${hueDef.l}%)` : "hsl(var(--primary))";
+  const color = hueDef ? `hsl(var(--${hueDef.varName}))` : "hsl(var(--primary))";
   const pieces = useMemo(
     () =>
       Array.from({ length: 28 }).map((_, i) => ({
