@@ -24,12 +24,16 @@ interface GameScreenProps {
   players: Array<{ name: string; hue: HueKey }>;
   timerEnabled: boolean;
   timerSeconds: number;
+  firstPlayer: PlayerId;
   onExit: () => void;
 }
 
-export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: GameScreenProps) => {
+export const GameScreen = ({ players, timerEnabled, timerSeconds, firstPlayer, onExit }: GameScreenProps) => {
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
-  const [current, setCurrent] = useState<PlayerId>(0);
+  const [current, setCurrent] = useState<PlayerId>(firstPlayer);
+  // Connect6: 첫 턴 1수, 이후 매 턴 2수
+  const [stonesLeft, setStonesLeft] = useState<number>(1);
+  const [turnIndex, setTurnIndex] = useState<number>(0); // 0이면 첫 턴
   const [winner, setWinner] = useState<WinResult | null>(null);
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
@@ -40,8 +44,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
 
   const gameOver = winner !== null || draw;
 
-  const advanceTurn = (next?: PlayerId) => {
-    setCurrent((p) => (next !== undefined ? next : (((p + 1) % 3) as PlayerId)));
+  const advanceTurn = () => {
+    setCurrent((p) => (((p + 1) % 3) as PlayerId));
+    setTurnIndex((t) => t + 1);
+    setStonesLeft(2); // 첫 턴 이후는 모두 2개씩
     setRemaining(timerSeconds);
   };
 
@@ -52,6 +58,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     bannerTimerRef.current = window.setTimeout(() => setTimeoutBanner(null), 1800);
   };
 
+
+
+
   // Timer
   useEffect(() => {
     if (!timerEnabled || gameOver) return;
@@ -59,12 +68,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
     intervalRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // turn pass — 배너 표시 후 다음 턴으로
+          // turn pass — 배너 표시 후 다음 턴으로 (남은 돌 수와 무관하게 턴 종료)
           window.setTimeout(() => {
             setCurrent((cur) => {
               showTimeoutBanner(cur);
               return ((cur + 1) % 3) as PlayerId;
             });
+            setTurnIndex((t) => t + 1);
+            setStonesLeft(2);
             setRemaining(timerSeconds);
           }, 0);
           return timerSeconds;
@@ -87,6 +98,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
   const handlePlace = (r: number, c: number) => {
     if (gameOver) return;
     if (board[r][c] !== null) return;
+    if (stonesLeft <= 0) return;
 
     const next = board.map((row) => row.slice());
     next[r][c] = current;
@@ -102,12 +114,19 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
       setDraw(true);
       return;
     }
+    // 같은 턴에 남은 돌이 더 있으면 같은 플레이어가 계속
+    if (stonesLeft > 1) {
+      setStonesLeft((s) => s - 1);
+      return;
+    }
     advanceTurn();
   };
 
   const reset = () => {
     setBoard(createEmptyBoard());
-    setCurrent(0);
+    setCurrent(firstPlayer);
+    setTurnIndex(0);
+    setStonesLeft(1);
     setWinner(null);
     setDraw(false);
     setLastMove(null);
@@ -148,11 +167,17 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, onExit }: Game
           <div className="rounded-3xl border-2 border-border bg-card p-5 shadow-md">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">현재 턴</p>
             <div className="mt-2 flex items-center gap-3">
-              <Stone hue={currentHue} size={40} animated key={`turn-${current}`} />
-              <div>
-                <p className="font-display text-xl">{players[current].name}</p>
+              <Stone hue={currentHue} size={40} animated key={`turn-${current}-${stonesLeft}`} />
+              <div className="flex-1 min-w-0">
+                <p className="font-display text-xl truncate">{players[current].name}</p>
                 <p className="text-xs text-muted-foreground">
                   {HUES.find((h) => h.key === currentHue)?.label}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">남은 돌</p>
+                <p className="font-display text-2xl tabular-nums text-primary">
+                  {stonesLeft}<span className="text-sm text-muted-foreground">/{turnIndex === 0 ? 1 : 2}</span>
                 </p>
               </div>
             </div>

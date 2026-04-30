@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, AlertCircle } from "lucide-react";
+import { Sparkles, AlertCircle, Flag } from "lucide-react";
 
 export interface SetupPlayer {
   name: string;
@@ -25,6 +25,7 @@ interface SetupScreenProps {
     players: Array<{ name: string; hue: HueKey }>;
     timerEnabled: boolean;
     timerSeconds: number;
+    firstPlayer: 0 | 1 | 2;
   }) => void;
 }
 
@@ -38,6 +39,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   ]);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
+  const [firstPlayer, setFirstPlayer] = useState<0 | 1 | 2>(0);
 
   const setPlayerHue = (idx: number, hue: HueKey) => {
     setPlayers((prev) => prev.map((p, i) => (i === idx ? { ...p, hue } : p)));
@@ -104,6 +106,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       })),
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
+      firstPlayer,
     });
   };
 
@@ -221,6 +224,42 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                 <p className="mt-2 text-xs text-muted-foreground">
                   시간이 다 되면 자동으로 다음 플레이어 턴으로 넘어가요.
                 </p>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border-2 border-border p-5 bg-background">
+              <Label className="font-display text-base inline-flex items-center gap-2">
+                <Flag className="w-4 h-4 text-primary" /> 첫 수 플레이어
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1 mb-3">
+                첫 턴엔 1개, 이후 모든 턴은 2개씩 둬요.
+              </p>
+              <div className="grid grid-cols-3 gap-2">
+                {players.map((p, i) => {
+                  const active = firstPlayer === i;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setFirstPlayer(i as 0 | 1 | 2)}
+                      className={[
+                        "btn-bounce rounded-xl border-2 p-2 flex flex-col items-center gap-1 transition-colors",
+                        active
+                          ? "border-primary bg-primary/10"
+                          : "border-border bg-card hover:bg-secondary",
+                      ].join(" ")}
+                    >
+                      {p.hue ? (
+                        <Stone hue={p.hue} size={28} />
+                      ) : (
+                        <span className="w-7 h-7 rounded-full border-2 border-dashed border-muted-foreground/40" />
+                      )}
+                      <span className="text-[11px] font-bold truncate max-w-full">
+                        {p.name.trim() || DEFAULT_NAMES[i]}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
