@@ -111,8 +111,15 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
         list.push(`색상 "${label}"이(가) 중복됐어요 (${arr.map((i) => `P${i + 1}`).join(", ")}).`);
       }
     });
+    if (!allTurnsSelected) {
+      const missing = turnSelected
+        .map((s, i) => (!s ? ORDER_LABELS[i] : null))
+        .filter(Boolean)
+        .join(", ");
+      list.push(`턴 순서를 선택해주세요 (${missing}).`);
+    }
     return list;
-  }, [players]);
+  }, [players, turnSelected, allTurnsSelected]);
 
   const handleStart = () => {
     if (issues.length > 0) {
