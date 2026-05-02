@@ -426,16 +426,20 @@ const BoardGrid = ({
                   ].join(" ")}
                 >
                   {!isEmpty && playerHue && (
-                    <Stone
-                      hue={playerHue}
-                      animated={!!isLast}
-                      highlight={inWin}
-                      className={[
-                        "!w-[92%] !h-[92%]",
-                        // 비-승리 라인 돌은 게임 종료 시 살짝 흐리게
-                        disabled && !inWin ? "opacity-55 saturate-75" : "",
-                      ].join(" ")}
-                    />
+                    <div className="relative w-[92%] h-[92%]">
+                      <Stone
+                        hue={playerHue}
+                        animated={!!isLast}
+                        highlight={inWin}
+                        className={[
+                          "!w-full !h-full",
+                          // 비-승리 라인 돌은 게임 종료 시 흐리게 (시맨틱 유틸)
+                          disabled && !inWin ? "stone-defeated" : "",
+                        ].join(" ")}
+                      />
+                      {/* 직전 수 강조: 작은 링 마커 */}
+                      {isLast && !disabled && <span className="last-move-ring" />}
+                    </div>
                   )}
                   {isPlayable && (
                     <span className="absolute inset-[20%] rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-foreground/10 ring-2 ring-foreground/30 group-hover:scale-110 transform-gpu duration-150" />
