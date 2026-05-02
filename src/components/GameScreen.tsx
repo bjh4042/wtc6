@@ -14,7 +14,8 @@ import { Stone, StoneFlat } from "@/components/Stone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
-import { RotateCcw, Timer as TimerIcon, TimerOff } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2 } from "lucide-react";
 
 // hue 키 → CSS hsl() 문자열
 const hueToHsl = (hue: HueKey) =>
