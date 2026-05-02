@@ -43,10 +43,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   const [winFlash, setWinFlash] = useState(false);
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
+  // 같은 턴 안에서 둔 돌들의 좌표 (Undo 용). 턴이 넘어가면 비워짐.
+  const [turnMoves, setTurnMoves] = useState<Array<[number, number]>>([]);
   const [remaining, setRemaining] = useState(timerSeconds);
   const [timeoutBanner, setTimeoutBanner] = useState<{ from: string; to: string } | null>(null);
   const intervalRef = useRef<number | null>(null);
   const bannerTimerRef = useRef<number | null>(null);
+  // 동일 턴에 타이머 핸들러가 두 번 발동되는 것을 막기 위한 가드
+  const turnPassingRef = useRef(false);
 
   const gameOver = winner !== null || draw;
 
@@ -55,6 +59,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setTurnIndex((t) => t + 1);
     setStonesLeft(2); // 첫 턴 이후는 모두 2개씩
     setRemaining(timerSeconds);
+    setTurnMoves([]);
+    turnPassingRef.current = false;
   };
 
   const showTimeoutBanner = (fromPos: 0 | 1 | 2) => {
@@ -74,7 +80,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     intervalRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // turn pass — 배너 표시 후 다음 턴으로 (남은 돌 수와 무관하게 턴 종료)
+          // 동일 턴 중복 발동 방지
+          if (turnPassingRef.current) return timerSeconds;
+          turnPassingRef.current = true;
           window.setTimeout(() => {
             setTurnPos((cur) => {
               showTimeoutBanner(cur);
@@ -83,6 +91,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             setTurnIndex((t) => t + 1);
             setStonesLeft(2);
             setRemaining(timerSeconds);
+            setTurnMoves([]);
+            turnPassingRef.current = false;
           }, 0);
           return timerSeconds;
         }
