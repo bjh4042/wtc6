@@ -13,7 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Sparkles, AlertCircle, Flag } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Sparkles, AlertCircle, Flag, BookOpen } from "lucide-react";
 
 export interface SetupPlayer {
   name: string;
@@ -44,6 +52,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [turnOrder, setTurnOrder] = useState<[PIdx, PIdx, PIdx]>([0, 1, 2]);
   const [turnSelected, setTurnSelected] = useState<[boolean, boolean, boolean]>([false, false, false]);
+  const [showRules, setShowRules] = useState(false);
 
   // 특정 슬롯(0/1/2 = 첫/둘/셋째 차례)에 플레이어 idx를 배정하면서 자리 충돌은 자동 스왑
   const assignTurn = (slot: 0 | 1 | 2, playerIdx: PIdx) => {
@@ -128,6 +137,11 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       });
       return;
     }
+    setShowRules(true);
+  };
+
+  const confirmStart = () => {
+    setShowRules(false);
     onStart({
       players: players.map((p, i) => ({
         name: p.name.trim() || DEFAULT_NAMES[i],
@@ -344,6 +358,64 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
           </aside>
         </section>
       </div>
+
+      <Dialog open={showRules} onOpenChange={setShowRules}>
+        <DialogContent className="rounded-2xl border-2">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl inline-flex items-center gap-2">
+              <BookOpen className="w-6 h-6 text-primary" />
+              육목 (Connect 6) 규칙
+            </DialogTitle>
+            <DialogDescription className="text-foreground/80 pt-2">
+              시작하기 전에 규칙을 한 번 확인해보세요!
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3 text-sm text-foreground/90">
+            <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-4">
+              <div className="font-display text-base text-primary mb-1">🏆 승리 조건</div>
+              <p>
+                가로·세로·대각선 어느 방향이든, 자신의 색 돌을{" "}
+                <span className="font-bold text-primary">6개 연속</span>으로 먼저 잇는
+                플레이어가 승리합니다.
+              </p>
+            </div>
+
+            <div className="rounded-xl border-2 border-border bg-background p-4 space-y-2">
+              <div className="font-display text-base">🪨 착수 규칙</div>
+              <ul className="list-disc pl-5 space-y-1">
+                <li>
+                  <span className="font-bold">첫 차례 플레이어</span>는 첫 턴에 돌{" "}
+                  <span className="font-bold">1개</span>만 놓습니다.
+                </li>
+                <li>
+                  이후 모든 플레이어는 매 턴마다 돌{" "}
+                  <span className="font-bold">2개</span>씩 놓습니다.
+                </li>
+                <li>이미 돌이 놓인 칸에는 둘 수 없어요.</li>
+              </ul>
+            </div>
+
+            <div className="rounded-xl border-2 border-border bg-background p-4">
+              <div className="font-display text-base mb-1">⏱️ 턴 진행</div>
+              <p>
+                설정한 순서대로 턴이 돌아가며, 타이머가 켜져 있으면 시간이 다 됐을 때
+                자동으로 다음 플레이어에게 넘어갑니다.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={confirmStart}
+              size="lg"
+              className="btn-bounce w-full font-display rounded-xl"
+            >
+              확인하고 시작하기 🎮
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 };
