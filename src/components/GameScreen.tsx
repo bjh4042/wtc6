@@ -264,11 +264,23 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
 
           <Button
             variant="outline"
-            onClick={onExit}
+            onClick={undo}
+            disabled={!canUndo}
             className="btn-bounce rounded-2xl h-12 font-bold border-2"
           >
-            <RotateCcw className="w-4 h-4 mr-2" /> 게임 포기 / 초기화
+            <Undo2 className="w-4 h-4 mr-2" /> 무르기 (현재 턴)
           </Button>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onExit}
+              className="btn-bounce rounded-2xl h-12 font-bold border-2 flex-1"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" /> 게임 포기
+            </Button>
+            <ThemeToggle className="h-12 w-12" />
+          </div>
         </aside>
 
         {/* Board */}
