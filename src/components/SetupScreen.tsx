@@ -137,6 +137,11 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       });
       return;
     }
+    setShowRules(true);
+  };
+
+  const confirmStart = () => {
+    setShowRules(false);
     onStart({
       players: players.map((p, i) => ({
         name: p.name.trim() || DEFAULT_NAMES[i],
