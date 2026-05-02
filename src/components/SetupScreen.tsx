@@ -52,6 +52,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [turnOrder, setTurnOrder] = useState<[PIdx, PIdx, PIdx]>([0, 1, 2]);
   const [turnSelected, setTurnSelected] = useState<[boolean, boolean, boolean]>([false, false, false]);
+  const [showRules, setShowRules] = useState(false);
 
   // 특정 슬롯(0/1/2 = 첫/둘/셋째 차례)에 플레이어 idx를 배정하면서 자리 충돌은 자동 스왑
   const assignTurn = (slot: 0 | 1 | 2, playerIdx: PIdx) => {
