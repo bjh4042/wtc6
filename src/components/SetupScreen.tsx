@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Sparkles, AlertCircle, Flag, BookOpen } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export interface SetupPlayer {
   name: string;
@@ -156,6 +157,9 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   return (
     <main className="min-h-screen w-full px-4 py-8 md:py-12">
       <div className="mx-auto max-w-5xl animate-fade-in">
+        <div className="flex justify-end mb-2">
+          <ThemeToggle />
+        </div>
         <header className="text-center mb-8">
           <h1 className="font-display text-4xl md:text-5xl text-foreground inline-flex items-center gap-3">
             <Sparkles className="text-primary animate-wiggle" />
@@ -195,8 +199,11 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                     {/* 이름 입력 */}
                     <Input
                       value={p.name}
-                      onChange={(e) => setPlayerName(idx, e.target.value)}
-                      maxLength={12}
+                      onChange={(e) => {
+                        // 코드포인트 단위로 16자 제한 (한글 조합·이모지 안전)
+                        const trimmed = Array.from(e.target.value).slice(0, 16).join("");
+                        setPlayerName(idx, trimmed);
+                      }}
                       placeholder={DEFAULT_NAMES[idx]}
                       className="rounded-xl border-2 font-bold text-center h-10 bg-card"
                     />

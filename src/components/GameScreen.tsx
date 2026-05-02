@@ -14,7 +14,8 @@ import { Stone, StoneFlat } from "@/components/Stone";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
-import { RotateCcw, Timer as TimerIcon, TimerOff } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2 } from "lucide-react";
 
 // hue 키 → CSS hsl() 문자열
 const hueToHsl = (hue: HueKey) =>
@@ -42,10 +43,14 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   const [winFlash, setWinFlash] = useState(false);
   const [draw, setDraw] = useState(false);
   const [lastMove, setLastMove] = useState<[number, number] | null>(null);
+  // 같은 턴 안에서 둔 돌들의 좌표 (Undo 용). 턴이 넘어가면 비워짐.
+  const [turnMoves, setTurnMoves] = useState<Array<[number, number]>>([]);
   const [remaining, setRemaining] = useState(timerSeconds);
   const [timeoutBanner, setTimeoutBanner] = useState<{ from: string; to: string } | null>(null);
   const intervalRef = useRef<number | null>(null);
   const bannerTimerRef = useRef<number | null>(null);
+  // 동일 턴에 타이머 핸들러가 두 번 발동되는 것을 막기 위한 가드
+  const turnPassingRef = useRef(false);
 
   const gameOver = winner !== null || draw;
 
@@ -54,6 +59,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setTurnIndex((t) => t + 1);
     setStonesLeft(2); // 첫 턴 이후는 모두 2개씩
     setRemaining(timerSeconds);
+    setTurnMoves([]);
+    turnPassingRef.current = false;
   };
 
   const showTimeoutBanner = (fromPos: 0 | 1 | 2) => {
@@ -73,7 +80,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     intervalRef.current = window.setInterval(() => {
       setRemaining((r) => {
         if (r <= 1) {
-          // turn pass — 배너 표시 후 다음 턴으로 (남은 돌 수와 무관하게 턴 종료)
+          // 동일 턴 중복 발동 방지
+          if (turnPassingRef.current) return timerSeconds;
+          turnPassingRef.current = true;
           window.setTimeout(() => {
             setTurnPos((cur) => {
               showTimeoutBanner(cur);
@@ -82,6 +91,8 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             setTurnIndex((t) => t + 1);
             setStonesLeft(2);
             setRemaining(timerSeconds);
+            setTurnMoves([]);
+            turnPassingRef.current = false;
           }, 0);
           return timerSeconds;
         }
@@ -109,6 +120,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     next[r][c] = current;
     setBoard(next);
     setLastMove([r, c]);
+    setTurnMoves((prev) => [...prev, [r, c]]);
 
     const win = checkWinAt(next, r, c);
     if (win) {
@@ -131,6 +143,21 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     advanceTurn();
   };
 
+  // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤엔 불가)
+  const canUndo = !gameOver && turnMoves.length > 0;
+  const undo = () => {
+    if (!canUndo) return;
+    const moves = turnMoves;
+    const [lr, lc] = moves[moves.length - 1];
+    const next = board.map((row) => row.slice());
+    next[lr][lc] = null;
+    setBoard(next);
+    const remainingMoves = moves.slice(0, -1);
+    setTurnMoves(remainingMoves);
+    setLastMove(remainingMoves.length > 0 ? remainingMoves[remainingMoves.length - 1] : null);
+    setStonesLeft((s) => s + 1);
+  };
+
   const reset = () => {
     setBoard(createEmptyBoard());
     setTurnPos(0);
@@ -141,8 +168,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setShowResult(false);
     setWinFlash(false);
     setLastMove(null);
+    setTurnMoves([]);
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
+    turnPassingRef.current = false;
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
   };
 
@@ -235,11 +264,23 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
 
           <Button
             variant="outline"
-            onClick={onExit}
+            onClick={undo}
+            disabled={!canUndo}
             className="btn-bounce rounded-2xl h-12 font-bold border-2"
           >
-            <RotateCcw className="w-4 h-4 mr-2" /> 게임 포기 / 초기화
+            <Undo2 className="w-4 h-4 mr-2" /> 무르기 (현재 턴)
           </Button>
+
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={onExit}
+              className="btn-bounce rounded-2xl h-12 font-bold border-2 flex-1"
+            >
+              <RotateCcw className="w-4 h-4 mr-2" /> 게임 포기
+            </Button>
+            <ThemeToggle className="h-12 w-12" />
+          </div>
         </aside>
 
         {/* Board */}
@@ -385,16 +426,20 @@ const BoardGrid = ({
                   ].join(" ")}
                 >
                   {!isEmpty && playerHue && (
-                    <Stone
-                      hue={playerHue}
-                      animated={!!isLast}
-                      highlight={inWin}
-                      className={[
-                        "!w-[92%] !h-[92%]",
-                        // 비-승리 라인 돌은 게임 종료 시 살짝 흐리게
-                        disabled && !inWin ? "opacity-55 saturate-75" : "",
-                      ].join(" ")}
-                    />
+                    <div className="relative w-[92%] h-[92%]">
+                      <Stone
+                        hue={playerHue}
+                        animated={!!isLast}
+                        highlight={inWin}
+                        className={[
+                          "!w-full !h-full",
+                          // 비-승리 라인 돌은 게임 종료 시 흐리게 (시맨틱 유틸)
+                          disabled && !inWin ? "stone-defeated" : "",
+                        ].join(" ")}
+                      />
+                      {/* 직전 수 강조: 작은 링 마커 */}
+                      {isLast && !disabled && <span className="last-move-ring" />}
+                    </div>
                   )}
                   {isPlayable && (
                     <span className="absolute inset-[20%] rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-foreground/10 ring-2 ring-foreground/30 group-hover:scale-110 transform-gpu duration-150" />
