@@ -120,6 +120,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     next[r][c] = current;
     setBoard(next);
     setLastMove([r, c]);
+    setTurnMoves((prev) => [...prev, [r, c]]);
 
     const win = checkWinAt(next, r, c);
     if (win) {
@@ -142,6 +143,21 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     advanceTurn();
   };
 
+  // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤엔 불가)
+  const canUndo = !gameOver && turnMoves.length > 0;
+  const undo = () => {
+    if (!canUndo) return;
+    const moves = turnMoves;
+    const [lr, lc] = moves[moves.length - 1];
+    const next = board.map((row) => row.slice());
+    next[lr][lc] = null;
+    setBoard(next);
+    const remainingMoves = moves.slice(0, -1);
+    setTurnMoves(remainingMoves);
+    setLastMove(remainingMoves.length > 0 ? remainingMoves[remainingMoves.length - 1] : null);
+    setStonesLeft((s) => s + 1);
+  };
+
   const reset = () => {
     setBoard(createEmptyBoard());
     setTurnPos(0);
@@ -152,8 +168,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setShowResult(false);
     setWinFlash(false);
     setLastMove(null);
+    setTurnMoves([]);
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
+    turnPassingRef.current = false;
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
   };
 
