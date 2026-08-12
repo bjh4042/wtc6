@@ -21,8 +21,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Sparkles, AlertCircle, Flag, BookOpen } from "lucide-react";
+import { Sparkles, AlertCircle, Flag, BookOpen, Bot, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import type { Control } from "@/game/ai/normalAi";
 
 export interface SetupPlayer {
   name: string;
@@ -31,7 +32,7 @@ export interface SetupPlayer {
 
 interface SetupScreenProps {
   onStart: (opts: {
-    players: Array<{ name: string; hue: HueKey }>;
+    players: Array<{ name: string; hue: HueKey; control: Control }>;
     timerEnabled: boolean;
     timerSeconds: number;
     turnOrder: [0 | 1 | 2, 0 | 1 | 2, 0 | 1 | 2];
@@ -43,17 +44,54 @@ const ORDER_LABELS = ["첫 번째", "두 번째", "세 번째"] as const;
 
 const DEFAULT_NAMES = ["플레이어 1", "플레이어 2", "플레이어 3"] as const;
 
+/** AI 수에 따른 기본 배치 (로직은 이 값을 보고 판단하며, PlayerId를 하드코딩하지 않는다) */
+const controlsFor = (aiCount: 0 | 1 | 2): [Control, Control, Control] =>
+  aiCount === 0
+    ? ["human", "human", "human"]
+    : aiCount === 1
+      ? ["human", "human", "ai"]
+      : ["human", "ai", "ai"];
+
+const AI_NAME_SET = new Set(["AI 1", "AI 2"]);
+
+const MODES: Array<{ value: 0 | 1 | 2; label: string }> = [
+  { value: 0, label: "사람 3명" },
+  { value: 1, label: "AI 1명" },
+  { value: 2, label: "AI 2명" },
+];
+
 export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   const [players, setPlayers] = useState<SetupPlayer[]>([
     { name: DEFAULT_NAMES[0], hue: null },
     { name: DEFAULT_NAMES[1], hue: null },
     { name: DEFAULT_NAMES[2], hue: null },
   ]);
+  const [aiCount, setAiCount] = useState<0 | 1 | 2>(0);
+  const controls = controlsFor(aiCount);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
   const [turnOrder, setTurnOrder] = useState<[PIdx, PIdx, PIdx]>([0, 1, 2]);
   const [turnSelected, setTurnSelected] = useState<[boolean, boolean, boolean]>([false, false, false]);
   const [showRules, setShowRules] = useState(false);
+
+  // 구성 변경 시 기본 이름만 자동 정리 (사용자가 직접 지은 이름은 유지)
+  const changeAiCount = (value: 0 | 1 | 2) => {
+    setAiCount(value);
+    const nextControls = controlsFor(value);
+    setPlayers((prev) => {
+      let aiSeq = 0;
+      return prev.map((p, i) => {
+        const isDefaultish =
+          !p.name.trim() || AI_NAME_SET.has(p.name.trim()) || p.name.trim() === DEFAULT_NAMES[i];
+        if (nextControls[i] === "ai") {
+          aiSeq += 1;
+          return isDefaultish ? { ...p, name: `AI ${aiSeq}` } : p;
+        }
+        return isDefaultish ? { ...p, name: DEFAULT_NAMES[i] } : p;
+      });
+    });
+  };
+
 
   // 특정 슬롯(0/1/2 = 첫/둘/셋째 차례)에 플레이어 idx를 배정하면서 자리 충돌은 자동 스왑
   const assignTurn = (slot: 0 | 1 | 2, playerIdx: PIdx) => {
