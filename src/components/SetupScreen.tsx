@@ -214,9 +214,36 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
           {/* Players */}
           <div>
             <h2 className="font-display text-xl mb-4">플레이어 설정</h2>
+
+            {/* 플레이 구성 (사람/AI) */}
+            <div className="mb-4 rounded-2xl border-2 border-border bg-background p-3">
+              <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider inline-flex items-center gap-1.5">
+                <Users className="w-3.5 h-3.5" /> 플레이 구성
+              </span>
+              <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="플레이 구성 선택">
+                {MODES.map((m) => (
+                  <button
+                    key={m.value}
+                    type="button"
+                    aria-pressed={aiCount === m.value}
+                    onClick={() => changeAiCount(m.value)}
+                    className={[
+                      "btn-bounce rounded-xl border-2 h-10 text-sm font-bold transition-colors",
+                      aiCount === m.value
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-foreground hover:bg-secondary",
+                    ].join(" ")}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid gap-3 sm:grid-cols-3">
               {players.map((p, idx) => {
                 const taken = takenBy(idx);
+                const isAi = controls[idx] === "ai";
                 const selectedLabel = p.hue
                   ? HUES.find((h) => h.key === p.hue)?.label
                   : undefined;
@@ -228,6 +255,12 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
                       P{idx + 1}
                     </span>
+                    {isAi && (
+                      <span className="inline-flex items-center gap-1 rounded-full border-2 border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        <Bot className="w-3 h-3" /> AI · 보통
+                      </span>
+                    )}
+
                     <div className="h-14 flex items-center justify-center">
                       {p.hue ? (
                         <Stone hue={p.hue} size={52} animated key={p.hue} />
