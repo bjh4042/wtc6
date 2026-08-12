@@ -217,8 +217,12 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
     turnPassingRef.current = false;
+    turnTokenRef.current++;
+    setAiThinking(false);
+    if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
   };
+
 
   const winLineSet = useMemo(() => {
     if (!winner) return new Set<string>();
