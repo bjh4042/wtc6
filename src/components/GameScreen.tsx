@@ -15,14 +15,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2 } from "lucide-react";
+import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2, Bot } from "lucide-react";
+import { chooseNextMove, type Control } from "@/game/ai/normalAi";
 
 // hue 키 → CSS hsl() 문자열
 const hueToHsl = (hue: HueKey) =>
   `hsl(var(--hue-${hue}-h) var(--hue-${hue}-s) var(--hue-${hue}-l))`;
 
 interface GameScreenProps {
-  players: Array<{ name: string; hue: HueKey }>;
+  players: Array<{ name: string; hue: HueKey; control?: Control }>;
   timerEnabled: boolean;
   timerSeconds: number;
   turnOrder: [PlayerId, PlayerId, PlayerId];
@@ -47,12 +48,19 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   const [turnMoves, setTurnMoves] = useState<Array<[number, number]>>([]);
   const [remaining, setRemaining] = useState(timerSeconds);
   const [timeoutBanner, setTimeoutBanner] = useState<{ from: string; to: string } | null>(null);
+  const [aiThinking, setAiThinking] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const bannerTimerRef = useRef<number | null>(null);
   // 동일 턴에 타이머 핸들러가 두 번 발동되는 것을 막기 위한 가드
   const turnPassingRef = useRef(false);
+  // 턴/게임이 바뀔 때마다 증가. 예약된 AI 작업의 유효성 검증에 사용.
+  const turnTokenRef = useRef(0);
+  const aiTimerRef = useRef<number | null>(null);
 
   const gameOver = winner !== null || draw;
+  const isAiTurn = players[current]?.control === "ai";
+  const inputLocked = gameOver || isAiTurn;
+
 
   const advanceTurn = () => {
     setTurnPos((p) => (((p + 1) % 3) as 0 | 1 | 2));
@@ -108,8 +116,44 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   useEffect(() => {
     return () => {
       if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+      if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
     };
   }, []);
+
+  // ── AI 턴 처리 ──
+  // 돌 1개를 둘 때마다 effect 가 다시 실행되며, 그때의 최신 board 로 다시 계산한다.
+  // (stale state 방지) 턴이 바뀌거나 언마운트되면 예약된 착수를 취소한다.
+  useEffect(() => {
+    if (gameOver || !isAiTurn || stonesLeft <= 0) {
+      setAiThinking(false);
+      return;
+    }
+    const token = ++turnTokenRef.current;
+    setAiThinking(true);
+
+    // 타이머가 켜져 있으면 남은 시간 안에 반드시 두도록 지연을 줄인다.
+    const budget = timerEnabled ? Math.max(0, remaining * 1000 - 800) : Infinity;
+    const delay = Math.min(550, budget);
+
+    aiTimerRef.current = window.setTimeout(() => {
+      if (token !== turnTokenRef.current) return;
+      const move = chooseNextMove(board, current, order, stonesLeft);
+      if (token !== turnTokenRef.current) return;
+      setAiThinking(false);
+      if (!move) {
+        advanceTurn();
+        return;
+      }
+      handlePlace(move[0], move[1]);
+    }, delay);
+
+    return () => {
+      turnTokenRef.current++;
+      if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, current, stonesLeft, gameOver, isAiTurn, turnIndex]);
+
 
   const handlePlace = (r: number, c: number) => {
     if (gameOver) return;
@@ -143,8 +187,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     advanceTurn();
   };
 
-  // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤엔 불가)
-  const canUndo = !gameOver && turnMoves.length > 0;
+  // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤·AI 턴에는 불가)
+  const canUndo = !gameOver && !isAiTurn && turnMoves.length > 0;
+
   const undo = () => {
     if (!canUndo) return;
     const moves = turnMoves;
@@ -172,8 +217,12 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
     turnPassingRef.current = false;
+    turnTokenRef.current++;
+    setAiThinking(false);
+    if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
     if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
   };
+
 
   const winLineSet = useMemo(() => {
     if (!winner) return new Set<string>();
@@ -212,11 +261,19 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             <div className="mt-2 flex items-center gap-3">
               <Stone hue={currentHue} size={40} animated key={`turn-${current}-${stonesLeft}`} />
               <div className="flex-1 min-w-0">
-                <p className="font-display text-xl truncate">{players[current].name}</p>
+                <p className="font-display text-xl truncate inline-flex items-center gap-1.5">
+                  {isAiTurn && <Bot className="w-4 h-4 text-primary shrink-0" />}
+                  <span className="truncate">{players[current].name}</span>
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {HUES.find((h) => h.key === currentHue)?.label}
+                  {aiThinking && !gameOver ? (
+                    <span className="text-primary font-bold">AI 생각 중…</span>
+                  ) : (
+                    HUES.find((h) => h.key === currentHue)?.label
+                  )}
                 </p>
               </div>
+
               <div className="text-right">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">남은 돌</p>
                 <p className="font-display text-2xl tabular-nums text-primary">
@@ -253,7 +310,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
                   ].join(" ")}
                 >
                   <StoneFlat hue={p.hue} size={22} />
-                  <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
+                  <span className="text-sm font-bold flex-1 truncate inline-flex items-center gap-1.5">
+                    {p.control === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
+                    <span className="truncate">{p.name}</span>
+                  </span>
                   {current === idx && !gameOver && (
                     <span className="text-[10px] font-bold uppercase text-primary">차례</span>
                   )}
@@ -293,6 +353,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             winLine={winner?.line ?? null}
             winnerHue={winnerHue}
             disabled={gameOver}
+            locked={inputLocked}
             onPlace={handlePlace}
           />
         </div>
@@ -377,12 +438,15 @@ interface BoardGridProps {
   winLineSet: Set<string>;
   winLine: Array<[number, number]> | null;
   winnerHue: HueKey | null;
+  /** 게임 종료 상태 (패배 돌 흐리게 처리에 사용) */
   disabled: boolean;
+  /** 착수 입력 잠금 (게임 종료 또는 AI 차례) */
+  locked: boolean;
   onPlace: (r: number, c: number) => void;
 }
 
 const BoardGrid = ({
-  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, onPlace,
+  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, locked, onPlace,
 }: BoardGridProps) => {
   return (
     <div
@@ -411,7 +475,7 @@ const BoardGrid = ({
               const inWin = winLineSet.has(`${r},${c}`);
               const playerHue = cell !== null ? players[cell].hue : null;
               const isEmpty = cell === null;
-              const isPlayable = isEmpty && !disabled;
+              const isPlayable = isEmpty && !locked;
               return (
                 <button
                   key={key}
