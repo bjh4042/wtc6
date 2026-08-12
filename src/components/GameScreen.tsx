@@ -342,6 +342,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             winLine={winner?.line ?? null}
             winnerHue={winnerHue}
             disabled={gameOver}
+            locked={inputLocked}
             onPlace={handlePlace}
           />
         </div>
@@ -426,12 +427,15 @@ interface BoardGridProps {
   winLineSet: Set<string>;
   winLine: Array<[number, number]> | null;
   winnerHue: HueKey | null;
+  /** 게임 종료 상태 (패배 돌 흐리게 처리에 사용) */
   disabled: boolean;
+  /** 착수 입력 잠금 (게임 종료 또는 AI 차례) */
+  locked: boolean;
   onPlace: (r: number, c: number) => void;
 }
 
 const BoardGrid = ({
-  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, onPlace,
+  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, locked, onPlace,
 }: BoardGridProps) => {
   return (
     <div
@@ -460,7 +464,7 @@ const BoardGrid = ({
               const inWin = winLineSet.has(`${r},${c}`);
               const playerHue = cell !== null ? players[cell].hue : null;
               const isEmpty = cell === null;
-              const isPlayable = isEmpty && !disabled;
+              const isPlayable = isEmpty && !locked;
               return (
                 <button
                   key={key}
