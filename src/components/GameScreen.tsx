@@ -261,11 +261,19 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             <div className="mt-2 flex items-center gap-3">
               <Stone hue={currentHue} size={40} animated key={`turn-${current}-${stonesLeft}`} />
               <div className="flex-1 min-w-0">
-                <p className="font-display text-xl truncate">{players[current].name}</p>
+                <p className="font-display text-xl truncate inline-flex items-center gap-1.5">
+                  {isAiTurn && <Bot className="w-4 h-4 text-primary shrink-0" />}
+                  <span className="truncate">{players[current].name}</span>
+                </p>
                 <p className="text-xs text-muted-foreground">
-                  {HUES.find((h) => h.key === currentHue)?.label}
+                  {aiThinking && !gameOver ? (
+                    <span className="text-primary font-bold">AI 생각 중…</span>
+                  ) : (
+                    HUES.find((h) => h.key === currentHue)?.label
+                  )}
                 </p>
               </div>
+
               <div className="text-right">
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">남은 돌</p>
                 <p className="font-display text-2xl tabular-nums text-primary">
