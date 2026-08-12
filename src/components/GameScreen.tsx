@@ -116,8 +116,44 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   useEffect(() => {
     return () => {
       if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+      if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
     };
   }, []);
+
+  // ── AI 턴 처리 ──
+  // 돌 1개를 둘 때마다 effect 가 다시 실행되며, 그때의 최신 board 로 다시 계산한다.
+  // (stale state 방지) 턴이 바뀌거나 언마운트되면 예약된 착수를 취소한다.
+  useEffect(() => {
+    if (gameOver || !isAiTurn || stonesLeft <= 0) {
+      setAiThinking(false);
+      return;
+    }
+    const token = ++turnTokenRef.current;
+    setAiThinking(true);
+
+    // 타이머가 켜져 있으면 남은 시간 안에 반드시 두도록 지연을 줄인다.
+    const budget = timerEnabled ? Math.max(0, remaining * 1000 - 800) : Infinity;
+    const delay = Math.min(550, budget);
+
+    aiTimerRef.current = window.setTimeout(() => {
+      if (token !== turnTokenRef.current) return;
+      const move = chooseNextMove(board, current, order, stonesLeft);
+      if (token !== turnTokenRef.current) return;
+      setAiThinking(false);
+      if (!move) {
+        advanceTurn();
+        return;
+      }
+      handlePlace(move[0], move[1]);
+    }, delay);
+
+    return () => {
+      turnTokenRef.current++;
+      if (aiTimerRef.current) window.clearTimeout(aiTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, current, stonesLeft, gameOver, isAiTurn, turnIndex]);
+
 
   const handlePlace = (r: number, c: number) => {
     if (gameOver) return;
