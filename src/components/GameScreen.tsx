@@ -310,7 +310,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
                   ].join(" ")}
                 >
                   <StoneFlat hue={p.hue} size={22} />
-                  <span className="text-sm font-bold flex-1 truncate">{p.name}</span>
+                  <span className="text-sm font-bold flex-1 truncate inline-flex items-center gap-1.5">
+                    {p.control === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
+                    <span className="truncate">{p.name}</span>
+                  </span>
                   {current === idx && !gameOver && (
                     <span className="text-[10px] font-bold uppercase text-primary">차례</span>
                   )}
