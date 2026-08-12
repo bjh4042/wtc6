@@ -136,9 +136,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     const delay = Math.min(550, budget);
 
     aiTimerRef.current = window.setTimeout(() => {
-      if (token !== turnTokenRef.current) return;
+      // 타이머 만료가 이미 확정된 턴(전환 대기 중)에는 착수하지 않는다.
+      if (token !== turnTokenRef.current || turnPassingRef.current) return;
       const move = chooseNextMove(board, current, order, stonesLeft);
-      if (token !== turnTokenRef.current) return;
+      if (token !== turnTokenRef.current || turnPassingRef.current) return;
       setAiThinking(false);
       if (!move) {
         advanceTurn();
