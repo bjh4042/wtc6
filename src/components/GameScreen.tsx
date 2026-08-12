@@ -15,14 +15,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2 } from "lucide-react";
+import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2, Bot } from "lucide-react";
+import { chooseNextMove, type Control } from "@/game/ai/normalAi";
 
 // hue 키 → CSS hsl() 문자열
 const hueToHsl = (hue: HueKey) =>
   `hsl(var(--hue-${hue}-h) var(--hue-${hue}-s) var(--hue-${hue}-l))`;
 
 interface GameScreenProps {
-  players: Array<{ name: string; hue: HueKey }>;
+  players: Array<{ name: string; hue: HueKey; control?: Control }>;
   timerEnabled: boolean;
   timerSeconds: number;
   turnOrder: [PlayerId, PlayerId, PlayerId];
@@ -47,12 +48,19 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   const [turnMoves, setTurnMoves] = useState<Array<[number, number]>>([]);
   const [remaining, setRemaining] = useState(timerSeconds);
   const [timeoutBanner, setTimeoutBanner] = useState<{ from: string; to: string } | null>(null);
+  const [aiThinking, setAiThinking] = useState(false);
   const intervalRef = useRef<number | null>(null);
   const bannerTimerRef = useRef<number | null>(null);
   // 동일 턴에 타이머 핸들러가 두 번 발동되는 것을 막기 위한 가드
   const turnPassingRef = useRef(false);
+  // 턴/게임이 바뀔 때마다 증가. 예약된 AI 작업의 유효성 검증에 사용.
+  const turnTokenRef = useRef(0);
+  const aiTimerRef = useRef<number | null>(null);
 
   const gameOver = winner !== null || draw;
+  const isAiTurn = players[current]?.control === "ai";
+  const inputLocked = gameOver || isAiTurn;
+
 
   const advanceTurn = () => {
     setTurnPos((p) => (((p + 1) % 3) as 0 | 1 | 2));
