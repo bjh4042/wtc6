@@ -185,7 +185,9 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       players: players.map((p, i) => ({
         name: p.name.trim() || DEFAULT_NAMES[i],
         hue: p.hue!,
+        control: controls[i],
       })),
+
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
       turnOrder,
