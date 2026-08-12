@@ -2,13 +2,15 @@ import { useState } from "react";
 import { SetupScreen } from "@/components/SetupScreen";
 import { GameScreen } from "@/components/GameScreen";
 import type { HueKey, PlayerId } from "@/game/types";
+import type { Control } from "@/game/ai/normalAi";
 
 interface GameSettings {
-  players: Array<{ name: string; hue: HueKey }>;
+  players: Array<{ name: string; hue: HueKey; control: Control }>;
   timerEnabled: boolean;
   timerSeconds: number;
   turnOrder: [PlayerId, PlayerId, PlayerId];
 }
+
 
 const Index = () => {
   const [settings, setSettings] = useState<GameSettings | null>(null);
