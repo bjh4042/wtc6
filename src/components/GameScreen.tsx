@@ -187,8 +187,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     advanceTurn();
   };
 
-  // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤엔 불가)
-  const canUndo = !gameOver && turnMoves.length > 0;
+  // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤·AI 턴에는 불가)
+  const canUndo = !gameOver && !isAiTurn && turnMoves.length > 0;
+
   const undo = () => {
     if (!canUndo) return;
     const moves = turnMoves;
