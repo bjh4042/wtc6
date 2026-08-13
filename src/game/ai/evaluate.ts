@@ -176,3 +176,25 @@ export function scoreFor(
   });
   return score;
 }
+
+export interface BoardAnalysis {
+  pot: Potentials;
+  /** 각 플레이어가 다음 턴 stones개로 즉시 승리 가능한 윈도우 수 */
+  wins: [number, number, number];
+}
+
+/** 잠재력 + 즉시 승리 위협을 한 번의 스캔으로 계산 (성능용) */
+export function analyzeBoard(board: Board, stones = 2): BoardAnalysis {
+  const pot: Potentials = [0, 0, 0];
+  const wins: [number, number, number] = [0, 0, 0];
+  forEachWindow(board, (w) => {
+    pot[w.owner] += POTENTIAL[w.count];
+    if (
+      w.count >= WIN_LENGTH ||
+      (w.empties.length <= stones && w.count + w.empties.length >= WIN_LENGTH)
+    ) {
+      wins[w.owner]++;
+    }
+  });
+  return { pot, wins };
+}
