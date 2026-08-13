@@ -79,7 +79,9 @@ export function opponentsInTurnOrder(
 
 /** 이번 턴 stones개로 육목을 완성할 수 있으면 그 자리들을 반환 */
 function findWinningTurn(board: Board, me: PlayerId, stones: number): Move[] | null {
-  const wins = winningWindows(board, me, stones);
+  const wins = winningWindows(board, me, stones).sort(
+    (a, b) => a.empties.length - b.empties.length,
+  );
   for (const w of wins) {
     if (w.empties.length === 0 || w.empties.length > stones) continue;
     return w.empties.map(([r, c]) => [r, c] as Move);
