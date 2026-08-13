@@ -113,6 +113,7 @@ describe("T8. 위험한 공격 거부", () => {
   it("자기 4목을 늘리는 대신 상대의 즉시 승리를 막는다", () => {
     const board = createEmptyBoard();
     place(board, 1, line(2, 2, 0, 1, 4)); // AI 4목 (자기 공격 유혹)
+    place(board, 2, [[2, 1], [2, 6]]); // 양끝 봉쇄 → AI 는 이번 턴 승리 불가
     place(board, 0, line(12, 4, 0, 1, 5)); // 사람 5+1
     const moves = chooseTurnMoves(board, 1, order, 2);
     // AI 는 4+2 로 이길 수 없는 상태여야 유효한 테스트 (양끝 2칸이 필요)
