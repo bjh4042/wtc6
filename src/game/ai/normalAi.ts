@@ -2,12 +2,7 @@
 // 계층: (1) 내 즉시 승리 → (2) 상대 즉시 승리 차단(SAFE 후보 우선) → (3) 보드 점수
 // 모두 순수 함수. 게임 규칙(보드/승리 판정/착수 개수)은 기존 로직을 그대로 재사용한다.
 
-import {
-  BOARD_SIZE,
-  checkWinAt,
-  type Board,
-  type PlayerId,
-} from "@/game/types";
+import { BOARD_SIZE, type Board, type PlayerId } from "@/game/types";
 import {
   analyzeBoard,
   criticalCells,
@@ -22,7 +17,6 @@ export type AiDifficulty = "normal";
 
 export type Move = [number, number];
 
-const WIN_BONUS = 1e9;
 /** 2수 조합 탐색에 사용할 상위 positional 후보 수 */
 const TOP_K = 12;
 /** 조합 탐색 대상(전술 후보 포함) 최대 크기 */
@@ -279,6 +273,3 @@ export function chooseNextMove(
   const moves = chooseTurnMoves(board, me, order, stonesLeft);
   return moves.length > 0 ? moves[0] : null;
 }
-
-/** 내부 헬퍼 재노출 (테스트용) */
-export { checkWinAt, WIN_BONUS };
