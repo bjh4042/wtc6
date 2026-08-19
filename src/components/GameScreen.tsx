@@ -238,7 +238,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   if (!currentHue) return null;
 
   return (
-    <main className="min-h-screen w-full px-2 py-4 md:px-6 md:py-8 animate-fade-in">
+    <main className="min-h-screen w-full px-2 py-3 md:px-4 md:py-4 animate-fade-in">
       {/* Timeout banner */}
       {timeoutBanner && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-scale-in">
