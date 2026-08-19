@@ -253,9 +253,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
           </div>
         </div>
       )}
-      <div className="mx-auto w-full max-w-6xl flex flex-col lg:flex-row gap-4 lg:gap-6 items-center lg:items-start">
+      <div className="mx-auto w-full max-w-[1700px] flex flex-col lg:flex-row gap-3 lg:gap-5 items-center lg:items-start">
         {/* Sidebar */}
-        <aside className="w-full lg:w-72 flex flex-col gap-4 order-2 lg:order-1">
+        <aside className="w-full lg:w-64 xl:w-72 shrink-0 flex flex-col gap-3 order-2 lg:order-1">
+
           {/* Current turn */}
           <div className="rounded-3xl border-2 border-border bg-card p-5 shadow-md">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">현재 턴</p>
