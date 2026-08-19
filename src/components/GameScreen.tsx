@@ -238,7 +238,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   if (!currentHue) return null;
 
   return (
-    <main className="min-h-screen w-full px-2 py-3 md:px-4 md:py-4 animate-fade-in">
+    <main className="min-h-screen w-full px-2 py-2 md:px-4 md:py-3 animate-fade-in">
       {/* Timeout banner */}
       {timeoutBanner && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-scale-in">
@@ -453,7 +453,7 @@ const BoardGrid = ({
   return (
     <div
       className="wood-board rounded-3xl p-2 sm:p-4 w-full"
-      style={{ maxWidth: "min(100%, calc(100dvh - 4rem), 1100px)" }}
+      style={{ maxWidth: "min(100%, calc(100dvh - 2.5rem), 1100px)" }}
     >
 
       <div className="relative w-full aspect-square">
