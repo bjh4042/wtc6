@@ -451,9 +451,10 @@ const BoardGrid = ({
 }: BoardGridProps) => {
   return (
     <div
-      className="wood-board rounded-3xl p-3 sm:p-5 w-full"
-      style={{ maxWidth: "min(92vh, 720px)" }}
+      className="wood-board rounded-3xl p-2 sm:p-4 w-full"
+      style={{ maxWidth: "min(100%, calc(100vh - 7rem), 1100px)" }}
     >
+
       <div className="relative w-full aspect-square">
         {/* Grid lines */}
         <GridLines />

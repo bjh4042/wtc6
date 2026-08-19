@@ -201,14 +201,16 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
           <ThemeToggle />
         </div>
         <header className="text-center mb-8">
-          <h1 className="font-display text-4xl md:text-5xl text-foreground inline-flex items-center gap-3">
-            <Sparkles className="text-primary animate-wiggle" />
-            3인 육목 <span className="text-primary">Connect 6</span>
+          <h1 className="brand-title text-5xl md:text-6xl text-foreground inline-flex items-center gap-3">
+            <Sparkles className="text-primary animate-wiggle w-8 h-8" />
+            육목킹
           </h1>
-          <p className="mt-3 text-muted-foreground font-semibold">
-            가로·세로·대각선으로 같은 색 돌 6개를 먼저 잇는 플레이어가 승리해요!
+          <p className="mt-2 text-sm font-bold tracking-[0.3em] text-primary uppercase">Connect 6</p>
+          <p className="mt-3 text-muted-foreground">
+            육목킹은 3명이 즐기는 육목 게임! 가로·세로·대각선으로 같은 색 돌 6개를 먼저 잇는 플레이어가 승리해요.
           </p>
         </header>
+
 
         <section className="grid gap-6 md:grid-cols-[1fr_auto] items-start bg-card rounded-3xl p-6 md:p-8 shadow-[0_8px_32px_-12px_hsl(var(--board-shadow)/0.35)] border-2 border-border">
           {/* Players */}
