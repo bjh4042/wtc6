@@ -1,3 +1,8 @@
-# Welcome to your Lovable project
+# 육목킹 (Yukmok King)
 
-TODO: Document your project here
+육목킹은 3명이 즐기는 19×19 육목(Connect 6) 웹 보드게임입니다.
+가로·세로·대각선으로 같은 색 돌 6개를 먼저 잇는 플레이어가 승리합니다.
+
+- 첫 턴 1수, 이후 매 턴 2수 (Connect6 표준 규칙)
+- 사람 3명 / AI 1명 / AI 2명 모드 (로컬 Normal AI)
+- 턴 순서·색상·이름·타이머 설정, 무르기, 다크 모드

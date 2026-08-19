@@ -12,8 +12,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito', 'system-ui', 'sans-serif'],
+        sans: ['Gowun Dodum', 'Nunito', 'Apple SD Gothic Neo', 'system-ui', 'sans-serif'],
+        serif: ['Song Myung', 'Nanum Myeongjo', 'Noto Serif KR', 'serif'],
       },
+
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

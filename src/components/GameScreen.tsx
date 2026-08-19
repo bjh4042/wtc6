@@ -238,7 +238,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   if (!currentHue) return null;
 
   return (
-    <main className="min-h-screen w-full px-2 py-4 md:px-6 md:py-8 animate-fade-in">
+    <main className="min-h-screen w-full px-2 py-2 md:px-4 md:py-3 animate-fade-in">
       {/* Timeout banner */}
       {timeoutBanner && (
         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-scale-in">
@@ -253,9 +253,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
           </div>
         </div>
       )}
-      <div className="mx-auto w-full max-w-6xl flex flex-col lg:flex-row gap-4 lg:gap-6 items-center lg:items-start">
+      <div className="mx-auto w-full max-w-[1700px] flex flex-col lg:flex-row gap-3 lg:gap-5 items-center lg:items-start">
         {/* Sidebar */}
-        <aside className="w-full lg:w-72 flex flex-col gap-4 order-2 lg:order-1">
+        <aside className="w-full lg:w-64 xl:w-72 shrink-0 flex flex-col gap-3 order-2 lg:order-1">
+
           {/* Current turn */}
           <div className="rounded-3xl border-2 border-border bg-card p-5 shadow-md">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">현재 턴</p>
@@ -451,9 +452,10 @@ const BoardGrid = ({
 }: BoardGridProps) => {
   return (
     <div
-      className="wood-board rounded-3xl p-3 sm:p-5 w-full"
-      style={{ maxWidth: "min(92vh, 720px)" }}
+      className="wood-board rounded-3xl p-2 sm:p-4 w-full"
+      style={{ maxWidth: "min(100%, calc(100dvh - 2.5rem), 1100px)" }}
     >
+
       <div className="relative w-full aspect-square">
         {/* Grid lines */}
         <GridLines />
