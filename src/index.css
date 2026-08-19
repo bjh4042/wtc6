@@ -110,7 +110,8 @@
   }
   body {
     @apply text-foreground;
-    font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+    font-family: 'Gowun Dodum', 'Nunito', 'Apple SD Gothic Neo', system-ui, -apple-system, sans-serif;
+
     background:
       radial-gradient(circle at 20% 10%, hsl(var(--background) / 0) 0%, transparent 55%),
       radial-gradient(circle at 80% 90%, hsl(var(--accent) / 0.4) 0%, transparent 55%),
@@ -180,12 +181,20 @@
 }
 
 @layer utilities {
+  /* 제목용 — 서예/명조 계열 */
   .font-display {
-    font-family: 'Nunito', system-ui, sans-serif;
-    font-weight: 800;
+    font-family: 'Song Myung', 'Nanum Myeongjo', 'Noto Serif KR', serif;
+    font-weight: 400;
     letter-spacing: -0.01em;
   }
+  /* 메인 로고 — 먹글씨 느낌 */
+  .brand-title {
+    font-family: 'Song Myung', 'Nanum Myeongjo', 'Noto Serif KR', serif;
+    letter-spacing: 0.04em;
+    text-shadow: 0 2px 0 hsl(var(--board-deep) / 0.35), 0 6px 18px hsl(var(--board-shadow) / 0.35);
+  }
 }
+
 
 /* Global keyframes (SVG inline animation에서 사용) */
 @keyframes win-line-draw {
