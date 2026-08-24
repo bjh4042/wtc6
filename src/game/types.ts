@@ -92,6 +92,46 @@ export function checkWinAt(board: Board, r: number, c: number): WinResult | null
   return null;
 }
 
+/**
+ * 방금 놓인 (r,c) 기준 4방향을 모두 검사하여 완성된 승리 라인 전부를 반환한다.
+ * (마지막 수로 가로+대각선이 동시에 완성되는 경우 등)
+ * 승리 규칙은 checkWinAt 과 동일 — 6개 이상 연속이면 승리, 라인은 앞 6칸만 표시한다.
+ */
+export function checkWinAllAt(board: Board, r: number, c: number): WinResult[] {
+  const player = board[r][c];
+  if (player === null) return [];
+
+  const results: WinResult[] = [];
+  for (const [dr, dc] of DIRECTIONS) {
+    const line: Array<[number, number]> = [[r, c]];
+
+    let i = r + dr, j = c + dc;
+    while (
+      i >= 0 && i < BOARD_SIZE &&
+      j >= 0 && j < BOARD_SIZE &&
+      board[i][j] === player
+    ) {
+      line.push([i, j]);
+      i += dr; j += dc;
+    }
+
+    i = r - dr; j = c - dc;
+    while (
+      i >= 0 && i < BOARD_SIZE &&
+      j >= 0 && j < BOARD_SIZE &&
+      board[i][j] === player
+    ) {
+      line.unshift([i, j]);
+      i -= dr; j -= dc;
+    }
+
+    if (line.length >= WIN_LENGTH) {
+      results.push({ player: player as PlayerId, line: line.slice(0, WIN_LENGTH) });
+    }
+  }
+  return results;
+}
+
 export function isBoardFull(board: Board): boolean {
   for (let r = 0; r < BOARD_SIZE; r++) {
     for (let c = 0; c < BOARD_SIZE; c++) {
