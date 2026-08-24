@@ -108,7 +108,10 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             setTurnIndex((t) => t + 1);
             setStonesLeft(2);
             setRemaining(timerSeconds);
+            // 시간 초과로 끝난 턴 — 실제로 놓인 돌(0~1개)만 최근 턴으로 표시
+            setLastTurnMoves(turnMovesRef.current);
             setTurnMoves([]);
+            turnMovesRef.current = [];
             turnPassingRef.current = false;
           }, 0);
           return timerSeconds;
@@ -174,11 +177,17 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     next[r][c] = current;
     setBoard(next);
     setLastMove([r, c]);
-    setTurnMoves((prev) => [...prev, [r, c]]);
+    const newTurnMoves = [...turnMovesRef.current, [r, c] as [number, number]];
+    turnMovesRef.current = newTurnMoves;
+    setTurnMoves(newTurnMoves);
 
-    const win = checkWinAt(next, r, c);
-    if (win) {
-      setWinner(win);
+    const wins = checkWinAllAt(next, r, c);
+    if (wins.length > 0) {
+      setWinner(wins[0]);
+      setWinLines(wins.map((w) => w.line));
+      setLastTurnMoves(newTurnMoves);
+      setTurnMoves([]);
+      turnMovesRef.current = [];
       setWinFlash(true);
       window.setTimeout(() => setWinFlash(false), 900);
       window.setTimeout(() => setShowResult(true), 1800);
@@ -186,6 +195,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     }
     if (isBoardFull(next)) {
       setDraw(true);
+      setLastTurnMoves(newTurnMoves);
+      setTurnMoves([]);
+      turnMovesRef.current = [];
       window.setTimeout(() => setShowResult(true), 600);
       return;
     }
@@ -194,7 +206,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
       setStonesLeft((s) => s - 1);
       return;
     }
-    advanceTurn();
+    advanceTurn(newTurnMoves);
   };
 
   // 같은 턴에 둔 마지막 돌을 되돌린다 (턴 넘어간 뒤·AI 턴에는 불가)
