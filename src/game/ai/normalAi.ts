@@ -196,20 +196,20 @@ export function chooseTurnMoves(
     pool.push(m);
   };
   forced.forEach(add);
-  singles.slice(0, TOP_K).forEach((s) => add(s.moves[0]));
+  singles.slice(0, topK).forEach((s) => add(s.moves[0]));
 
   if (stonesToPlace === 1) {
     const cands = pool
-      .slice(0, PAIR_POOL + TOP_K)
+      .slice(0, pairPool + topK)
       .map((m) => evaluateMoves(board, [m], me, opponents))
       .sort(better);
     const best = cands[0] ?? singles[0];
-    return [pickWithVariety(cands.length ? cands : singles, best)];
+    return [pickWithVariety(cands.length ? cands : singles, best, variety)];
   }
 
   if (pool.length === 1) return [pool[0]];
 
-  const limited = pool.slice(0, PAIR_POOL);
+  const limited = pool.slice(0, pairPool);
   let best: Evaluated | null = null;
   const tied: Evaluated[] = [];
 
