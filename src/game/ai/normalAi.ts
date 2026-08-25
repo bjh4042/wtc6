@@ -153,12 +153,25 @@ function buildPool(board: Board, players: PlayerId[]): Move[] {
  * stonesToPlace 는 기존 게임 규칙이 정한 값(첫 턴 1, 이후 2)을 그대로 받는다.
  * 첫 돌로 이미 승리하면 두 번째 돌은 반환하지 않는다.
  */
+export interface SearchOptions {
+  /** 2수 조합 탐색에 포함할 positional 상위 후보 수 */
+  topK?: number;
+  /** 조합 탐색 풀 최대 크기 */
+  pairPool?: number;
+  /** 동점 후보 사이의 무작위 다양성 허용 여부 */
+  variety?: boolean;
+}
+
 export function chooseTurnMoves(
   board: Board,
   me: PlayerId,
   order: readonly PlayerId[],
   stonesToPlace: number,
+  opts: SearchOptions = {},
 ): Move[] {
+  const topK = opts.topK ?? TOP_K;
+  const pairPool = opts.pairPool ?? PAIR_POOL;
+  const variety = opts.variety ?? true;
   if (stonesToPlace <= 0) return [];
   const opponents = opponentsInTurnOrder(order, me);
 
