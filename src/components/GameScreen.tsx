@@ -152,7 +152,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, aiD
     aiTimerRef.current = window.setTimeout(() => {
       // 타이머 만료가 이미 확정된 턴(전환 대기 중)에는 착수하지 않는다.
       if (token !== turnTokenRef.current || turnPassingRef.current) return;
-      const move = chooseNextMove(board, current, order, stonesLeft);
+      const move = chooseMoveByDifficulty(board, current, order, stonesLeft, aiDifficulty);
       if (token !== turnTokenRef.current || turnPassingRef.current) return;
       setAiThinking(false);
       if (!move) {
