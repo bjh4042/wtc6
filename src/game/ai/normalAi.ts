@@ -230,7 +230,7 @@ export function chooseTurnMoves(
 
   // 동점(안전성 동일) 후보들 사이에서만 fork 위험을 추가로 본다
   const refined = refineByFork(tied, best, opponents);
-  return pickPairWithVariety(refined, best);
+  return pickPairWithVariety(refined, best, variety);
 }
 
 /** 안전성이 같은 상위 후보들 중 상대 fork 를 허용하지 않는 쪽을 고른다 */
@@ -253,8 +253,8 @@ function refineByFork(
 }
 
 /** 전술적으로 동일한 후보 사이에서만 소량의 다양성을 허용 */
-function pickWithVariety(scored: Evaluated[], best: Evaluated): Move {
-  if (best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves[0];
+function pickWithVariety(scored: Evaluated[], best: Evaluated, variety = true): Move {
+  if (!variety || best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves[0];
   const tolerance = Math.max(1, Math.abs(best.score) * 0.02);
   const pool = scored
     .filter(
@@ -269,8 +269,8 @@ function pickWithVariety(scored: Evaluated[], best: Evaluated): Move {
   ].moves[0];
 }
 
-function pickPairWithVariety(pool: Evaluated[], best: Evaluated): Move[] {
-  if (best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves;
+function pickPairWithVariety(pool: Evaluated[], best: Evaluated, variety = true): Move[] {
+  if (!variety || best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves;
   const cands = pool.filter(
     (s) => best.score - s.score <= Math.max(1, Math.abs(best.score) * 0.02),
   );
@@ -284,7 +284,8 @@ export function chooseNextMove(
   me: PlayerId,
   order: readonly PlayerId[],
   stonesLeft: number,
+  opts: SearchOptions = {},
 ): Move | null {
-  const moves = chooseTurnMoves(board, me, order, stonesLeft);
+  const moves = chooseTurnMoves(board, me, order, stonesLeft, opts);
   return moves.length > 0 ? moves[0] : null;
 }
