@@ -153,12 +153,25 @@ function buildPool(board: Board, players: PlayerId[]): Move[] {
  * stonesToPlace 는 기존 게임 규칙이 정한 값(첫 턴 1, 이후 2)을 그대로 받는다.
  * 첫 돌로 이미 승리하면 두 번째 돌은 반환하지 않는다.
  */
+export interface SearchOptions {
+  /** 2수 조합 탐색에 포함할 positional 상위 후보 수 */
+  topK?: number;
+  /** 조합 탐색 풀 최대 크기 */
+  pairPool?: number;
+  /** 동점 후보 사이의 무작위 다양성 허용 여부 */
+  variety?: boolean;
+}
+
 export function chooseTurnMoves(
   board: Board,
   me: PlayerId,
   order: readonly PlayerId[],
   stonesToPlace: number,
+  opts: SearchOptions = {},
 ): Move[] {
+  const topK = opts.topK ?? TOP_K;
+  const pairPool = opts.pairPool ?? PAIR_POOL;
+  const variety = opts.variety ?? true;
   if (stonesToPlace <= 0) return [];
   const opponents = opponentsInTurnOrder(order, me);
 
@@ -183,20 +196,20 @@ export function chooseTurnMoves(
     pool.push(m);
   };
   forced.forEach(add);
-  singles.slice(0, TOP_K).forEach((s) => add(s.moves[0]));
+  singles.slice(0, topK).forEach((s) => add(s.moves[0]));
 
   if (stonesToPlace === 1) {
     const cands = pool
-      .slice(0, PAIR_POOL + TOP_K)
+      .slice(0, pairPool + topK)
       .map((m) => evaluateMoves(board, [m], me, opponents))
       .sort(better);
     const best = cands[0] ?? singles[0];
-    return [pickWithVariety(cands.length ? cands : singles, best)];
+    return [pickWithVariety(cands.length ? cands : singles, best, variety)];
   }
 
   if (pool.length === 1) return [pool[0]];
 
-  const limited = pool.slice(0, PAIR_POOL);
+  const limited = pool.slice(0, pairPool);
   let best: Evaluated | null = null;
   const tied: Evaluated[] = [];
 
@@ -217,7 +230,7 @@ export function chooseTurnMoves(
 
   // 동점(안전성 동일) 후보들 사이에서만 fork 위험을 추가로 본다
   const refined = refineByFork(tied, best, opponents);
-  return pickPairWithVariety(refined, best);
+  return pickPairWithVariety(refined, best, variety);
 }
 
 /** 안전성이 같은 상위 후보들 중 상대 fork 를 허용하지 않는 쪽을 고른다 */
@@ -240,8 +253,8 @@ function refineByFork(
 }
 
 /** 전술적으로 동일한 후보 사이에서만 소량의 다양성을 허용 */
-function pickWithVariety(scored: Evaluated[], best: Evaluated): Move {
-  if (best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves[0];
+function pickWithVariety(scored: Evaluated[], best: Evaluated, variety = true): Move {
+  if (!variety || best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves[0];
   const tolerance = Math.max(1, Math.abs(best.score) * 0.02);
   const pool = scored
     .filter(
@@ -256,8 +269,8 @@ function pickWithVariety(scored: Evaluated[], best: Evaluated): Move {
   ].moves[0];
 }
 
-function pickPairWithVariety(pool: Evaluated[], best: Evaluated): Move[] {
-  if (best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves;
+function pickPairWithVariety(pool: Evaluated[], best: Evaluated, variety = true): Move[] {
+  if (!variety || best.danger > 0 || Math.abs(best.score) >= 50000) return best.moves;
   const cands = pool.filter(
     (s) => best.score - s.score <= Math.max(1, Math.abs(best.score) * 0.02),
   );
@@ -271,7 +284,8 @@ export function chooseNextMove(
   me: PlayerId,
   order: readonly PlayerId[],
   stonesLeft: number,
+  opts: SearchOptions = {},
 ): Move | null {
-  const moves = chooseTurnMoves(board, me, order, stonesLeft);
+  const moves = chooseTurnMoves(board, me, order, stonesLeft, opts);
   return moves.length > 0 ? moves[0] : null;
 }

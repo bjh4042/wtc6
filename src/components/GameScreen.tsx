@@ -16,7 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2, Bot } from "lucide-react";
-import { chooseNextMove, type Control } from "@/game/ai/normalAi";
+import { type Control } from "@/game/ai/normalAi";
+import { chooseMoveByDifficulty, DIFFICULTY_LABELS, type Difficulty } from "@/game/ai/difficulty";
 
 // hue 키 → CSS hsl() 문자열
 const hueToHsl = (hue: HueKey) =>
@@ -27,10 +28,11 @@ interface GameScreenProps {
   timerEnabled: boolean;
   timerSeconds: number;
   turnOrder: [PlayerId, PlayerId, PlayerId];
+  aiDifficulty?: Difficulty;
   onExit: () => void;
 }
 
-export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onExit }: GameScreenProps) => {
+export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, aiDifficulty = "normal", onExit }: GameScreenProps) => {
   const order = turnOrder ?? ([0, 1, 2] as [PlayerId, PlayerId, PlayerId]);
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
   // turnPos: 순서 슬롯 (0/1/2). 실제 플레이어 = order[turnPos]
@@ -150,7 +152,7 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     aiTimerRef.current = window.setTimeout(() => {
       // 타이머 만료가 이미 확정된 턴(전환 대기 중)에는 착수하지 않는다.
       if (token !== turnTokenRef.current || turnPassingRef.current) return;
-      const move = chooseNextMove(board, current, order, stonesLeft);
+      const move = chooseMoveByDifficulty(board, current, order, stonesLeft, aiDifficulty);
       if (token !== turnTokenRef.current || turnPassingRef.current) return;
       setAiThinking(false);
       if (!move) {
@@ -236,6 +238,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
     setWinFlash(false);
     setLastMove(null);
     setTurnMoves([]);
+    turnMovesRef.current = [];
+    setLastTurnMoves([]);
+    setWinLines([]);
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
     turnPassingRef.current = false;
@@ -246,10 +251,13 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
   };
 
 
+  // 완성된 모든 승리 라인의 칸 (여러 방향 동시 완성 지원)
   const winLineSet = useMemo(() => {
-    if (!winner) return new Set<string>();
-    return new Set(winner.line.map(([r, c]) => `${r},${c}`));
-  }, [winner]);
+    const set = new Set<string>();
+    winLines.forEach((line) => line.forEach(([r, c]) => set.add(`${r},${c}`)));
+    if (set.size === 0 && winner) winner.line.forEach(([r, c]) => set.add(`${r},${c}`));
+    return set;
+  }, [winLines, winner]);
 
   const safeCurrent = (players[current] ? current : 0) as PlayerId;
   const currentHue = players[safeCurrent]?.hue;
@@ -372,8 +380,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onE
             board={board}
             players={players}
             lastMove={lastMove}
+            recentMoves={turnMoves.length > 0 ? turnMoves : lastTurnMoves}
             winLineSet={winLineSet}
-            winLine={winner?.line ?? null}
+            winLines={winLines.length > 0 ? winLines : winner ? [winner.line] : []}
             winnerHue={winnerHue}
             disabled={gameOver}
             locked={inputLocked}
@@ -458,8 +467,10 @@ interface BoardGridProps {
   board: Board;
   players: Array<{ hue: HueKey }>;
   lastMove: [number, number] | null;
+  /** 최근(진행 중이거나 직전) 턴에 놓인 돌들 */
+  recentMoves: Array<[number, number]>;
   winLineSet: Set<string>;
-  winLine: Array<[number, number]> | null;
+  winLines: Array<Array<[number, number]>>;
   winnerHue: HueKey | null;
   /** 게임 종료 상태 (패배 돌 흐리게 처리에 사용) */
   disabled: boolean;
@@ -468,21 +479,89 @@ interface BoardGridProps {
   onPlace: (r: number, c: number) => void;
 }
 
+const LENS_SIZE = 132;
+const LENS_ZOOM = 2.6;
+
 const BoardGrid = ({
-  board, players, lastMove, winLineSet, winLine, winnerHue, disabled, locked, onPlace,
+  board, players, lastMove, recentMoves, winLineSet, winLines, winnerHue, disabled, locked, onPlace,
 }: BoardGridProps) => {
+  const boardRef = useRef<HTMLDivElement | null>(null);
+  const touchRef = useRef(false);
+  const [lens, setLens] = useState<
+    { r: number; c: number; px: number; py: number; size: number } | null
+  >(null);
+
+  const recentSet = useMemo(
+    () => new Set(recentMoves.map(([r, c]) => `${r},${c}`)),
+    [recentMoves],
+  );
+
+  const pointToCell = (e: React.PointerEvent) => {
+    const el = boardRef.current;
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    const px = e.clientX - rect.left;
+    const py = e.clientY - rect.top;
+    const cell = rect.width / BOARD_SIZE;
+    const c = Math.min(BOARD_SIZE - 1, Math.max(0, Math.floor(px / cell)));
+    const r = Math.min(BOARD_SIZE - 1, Math.max(0, Math.floor(py / cell)));
+    return { r, c, px, py, size: rect.width };
+  };
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch" || locked) return;
+    touchRef.current = true;
+    const p = pointToCell(e);
+    if (p) setLens(p);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch" || locked || !touchRef.current) return;
+    const p = pointToCell(e);
+    if (p) setLens(p);
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (e.pointerType !== "touch") return;
+    const p = lens ?? pointToCell(e);
+    setLens(null);
+    if (p && !locked && board[p.r][p.c] === null) onPlace(p.r, p.c);
+    window.setTimeout(() => {
+      touchRef.current = false;
+    }, 400);
+  };
+  const onPointerCancel = () => setLens(null);
+
+  const lensStyle = (): React.CSSProperties | null => {
+    if (!lens) return null;
+    const max = lens.size - LENS_SIZE;
+    const left = Math.min(Math.max(lens.px - LENS_SIZE / 2, 0), Math.max(0, max));
+    const above = lens.py - LENS_SIZE - 28;
+    const top = above >= 0 ? above : Math.min(lens.py + 28, Math.max(0, max));
+    return { left, top, width: LENS_SIZE, height: LENS_SIZE };
+  };
+
   return (
     <div
       className="wood-board rounded-3xl p-2 sm:p-4 w-full"
       style={{ maxWidth: "min(100%, calc(100dvh - 2.5rem), 1100px)" }}
     >
 
-      <div className="relative w-full aspect-square">
+      <div
+        ref={boardRef}
+        className="relative w-full aspect-square"
+        style={{ touchAction: locked ? "auto" : "none" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+      >
         {/* Grid lines */}
         <GridLines />
 
-        {/* Win line overlay (SVG) */}
-        {winLine && winnerHue && <WinLineOverlay line={winLine} hue={winnerHue} />}
+        {/* Win line overlay (SVG) — 동시에 완성된 라인 모두 강조 */}
+        {winnerHue &&
+          winLines.map((line, i) => (
+            <WinLineOverlay key={`wl-${i}`} line={line} hue={winnerHue} />
+          ))}
 
         {/* Click + stone layer */}
         <div
@@ -496,6 +575,7 @@ const BoardGrid = ({
             row.map((cell, c) => {
               const key = `${r}-${c}`;
               const isLast = lastMove && lastMove[0] === r && lastMove[1] === c;
+              const isRecent = recentSet.has(`${r},${c}`);
               const inWin = winLineSet.has(`${r},${c}`);
               const playerHue = cell !== null ? players[cell].hue : null;
               const isEmpty = cell === null;
@@ -506,7 +586,10 @@ const BoardGrid = ({
                   type="button"
                   aria-label={`${r + 1}행 ${c + 1}열${isEmpty ? "" : " (이미 놓임)"}`}
                   disabled={!isPlayable}
-                  onClick={() => onPlace(r, c)}
+                  onClick={() => {
+                    if (touchRef.current) return; // 터치는 렌즈에서 처리
+                    onPlace(r, c);
+                  }}
                   className={[
                     "relative flex items-center justify-center group",
                     "focus:outline-none focus-visible:z-10",
@@ -525,8 +608,14 @@ const BoardGrid = ({
                           disabled && !inWin ? "stone-defeated" : "",
                         ].join(" ")}
                       />
-                      {/* 직전 수 강조: 작은 링 마커 */}
-                      {isLast && !disabled && <span className="last-move-ring" />}
+                      {/* 최근 턴에 놓인 돌: 얇은 링 / 그중 직전 수: 강한 링 + 중심점 */}
+                      {isRecent && !disabled && !isLast && <span className="recent-move-ring" />}
+                      {isLast && !disabled && (
+                        <>
+                          <span className="last-move-ring" />
+                          <span className="last-move-dot" />
+                        </>
+                      )}
                     </div>
                   )}
                   {isPlayable && (
@@ -537,6 +626,47 @@ const BoardGrid = ({
             })
           )}
         </div>
+
+        {/* 모바일 착수 확대 렌즈 */}
+        {lens && (
+          <div
+            className="pointer-events-none absolute z-30 rounded-full overflow-hidden border-4 border-card shadow-2xl wood-board"
+            style={lensStyle() ?? undefined}
+          >
+            <div
+              className="absolute"
+              style={{
+                width: lens.size * LENS_ZOOM,
+                height: lens.size * LENS_ZOOM,
+                left: LENS_SIZE / 2 - ((lens.c + 0.5) * (lens.size / BOARD_SIZE)) * LENS_ZOOM,
+                top: LENS_SIZE / 2 - ((lens.r + 0.5) * (lens.size / BOARD_SIZE)) * LENS_ZOOM,
+              }}
+            >
+              <GridLines />
+              <div
+                className="absolute inset-0 grid"
+                style={{
+                  gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)`,
+                  gridTemplateRows: `repeat(${BOARD_SIZE}, 1fr)`,
+                }}
+              >
+                {board.map((row, r) =>
+                  row.map((cell, c) => (
+                    <span key={`lz-${r}-${c}`} className="flex items-center justify-center">
+                      {cell !== null && (
+                        <Stone hue={players[cell].hue} className="!w-[92%] !h-[92%]" />
+                      )}
+                    </span>
+                  )),
+                )}
+              </div>
+            </div>
+            {/* 조준 십자선 */}
+            <span className="absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 bg-foreground/50" />
+            <span className="absolute top-1/2 left-0 right-0 h-px -translate-y-1/2 bg-foreground/50" />
+            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 rounded-full ring-2 ring-foreground/70" />
+          </div>
+        )}
       </div>
     </div>
   );
