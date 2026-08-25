@@ -16,7 +16,8 @@ import { Progress } from "@/components/ui/progress";
 import { ResultModal } from "@/components/ResultModal";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { RotateCcw, Timer as TimerIcon, TimerOff, Undo2, Bot } from "lucide-react";
-import { chooseNextMove, type Control } from "@/game/ai/normalAi";
+import { type Control } from "@/game/ai/normalAi";
+import { chooseMoveByDifficulty, DIFFICULTY_LABELS, type Difficulty } from "@/game/ai/difficulty";
 
 // hue 키 → CSS hsl() 문자열
 const hueToHsl = (hue: HueKey) =>
@@ -27,10 +28,11 @@ interface GameScreenProps {
   timerEnabled: boolean;
   timerSeconds: number;
   turnOrder: [PlayerId, PlayerId, PlayerId];
+  aiDifficulty?: Difficulty;
   onExit: () => void;
 }
 
-export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, onExit }: GameScreenProps) => {
+export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, aiDifficulty = "normal", onExit }: GameScreenProps) => {
   const order = turnOrder ?? ([0, 1, 2] as [PlayerId, PlayerId, PlayerId]);
   const [board, setBoard] = useState<Board>(() => createEmptyBoard());
   // turnPos: 순서 슬롯 (0/1/2). 실제 플레이어 = order[turnPos]
