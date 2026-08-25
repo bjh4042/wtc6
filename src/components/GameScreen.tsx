@@ -238,6 +238,9 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, aiD
     setWinFlash(false);
     setLastMove(null);
     setTurnMoves([]);
+    turnMovesRef.current = [];
+    setLastTurnMoves([]);
+    setWinLines([]);
     setRemaining(timerSeconds);
     setTimeoutBanner(null);
     turnPassingRef.current = false;
@@ -248,10 +251,13 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, aiD
   };
 
 
+  // 완성된 모든 승리 라인의 칸 (여러 방향 동시 완성 지원)
   const winLineSet = useMemo(() => {
-    if (!winner) return new Set<string>();
-    return new Set(winner.line.map(([r, c]) => `${r},${c}`));
-  }, [winner]);
+    const set = new Set<string>();
+    winLines.forEach((line) => line.forEach(([r, c]) => set.add(`${r},${c}`)));
+    if (set.size === 0 && winner) winner.line.forEach(([r, c]) => set.add(`${r},${c}`));
+    return set;
+  }, [winLines, winner]);
 
   const safeCurrent = (players[current] ? current : 0) as PlayerId;
   const currentHue = players[safeCurrent]?.hue;
