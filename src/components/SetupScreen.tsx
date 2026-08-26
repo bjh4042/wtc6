@@ -24,6 +24,8 @@ import {
 import { Sparkles, AlertCircle, Flag, BookOpen, Bot, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Control } from "@/game/ai/normalAi";
+import { DIFFICULTY_LABELS, type Difficulty } from "@/game/ai/difficulty";
+
 
 export interface SetupPlayer {
   name: string;
@@ -36,6 +38,7 @@ interface SetupScreenProps {
     timerEnabled: boolean;
     timerSeconds: number;
     turnOrder: [0 | 1 | 2, 0 | 1 | 2, 0 | 1 | 2];
+    aiDifficulty: Difficulty;
   }) => void;
 }
 
@@ -67,6 +70,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
     { name: DEFAULT_NAMES[2], hue: null },
   ]);
   const [aiCount, setAiCount] = useState<0 | 1 | 2>(0);
+  const [aiDifficulty, setAiDifficulty] = useState<Difficulty>("normal");
   const controls = controlsFor(aiCount);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
@@ -191,6 +195,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
       turnOrder,
+      aiDifficulty,
     });
   };
 
@@ -240,7 +245,34 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                   </button>
                 ))}
               </div>
+
+              {aiCount > 0 && (
+                <div className="mt-3">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    AI 난이도
+                  </span>
+                  <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="AI 난이도 선택">
+                    {(["easy", "normal", "hard"] as Difficulty[]).map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-pressed={aiDifficulty === d}
+                        onClick={() => setAiDifficulty(d)}
+                        className={[
+                          "btn-bounce rounded-xl border-2 h-10 text-sm font-bold transition-colors",
+                          aiDifficulty === d
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-foreground hover:bg-secondary",
+                        ].join(" ")}
+                      >
+                        {DIFFICULTY_LABELS[d]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
 
             <div className="grid gap-3 sm:grid-cols-3">
               {players.map((p, idx) => {
@@ -259,7 +291,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                     </span>
                     {isAi && (
                       <span className="inline-flex items-center gap-1 rounded-full border-2 border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                        <Bot className="w-3 h-3" /> AI · 보통
+                        <Bot className="w-3 h-3" /> AI · {DIFFICULTY_LABELS[aiDifficulty]}
                       </span>
                     )}
 
