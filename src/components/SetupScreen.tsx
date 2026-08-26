@@ -184,13 +184,23 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
   };
 
   const confirmStart = () => {
+    const configuredPlayers = players.flatMap((p, i) =>
+      p.hue
+        ? [{
+            name: p.name.trim() || DEFAULT_NAMES[i],
+            hue: p.hue,
+            control: controls[i],
+          }]
+        : [],
+    );
+    if (configuredPlayers.length !== players.length) {
+      toast.error("모든 플레이어의 색상을 골라주세요.");
+      setShowRules(false);
+      return;
+    }
     setShowRules(false);
     onStart({
-      players: players.map((p, i) => ({
-        name: p.name.trim() || DEFAULT_NAMES[i],
-        hue: p.hue!,
-        control: controls[i],
-      })),
+      players: configuredPlayers,
 
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
