@@ -344,6 +344,11 @@ export const GameScreen = ({ players, timerEnabled, timerSeconds, turnOrder, aiD
                   <span className="text-sm font-bold flex-1 truncate inline-flex items-center gap-1.5">
                     {p.control === "ai" && <Bot className="w-3.5 h-3.5 text-primary shrink-0" />}
                     <span className="truncate">{p.name}</span>
+                    {p.control === "ai" && (
+                      <span className="shrink-0 rounded-full border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
+                        {DIFFICULTY_LABELS[aiDifficulty]}
+                      </span>
+                    )}
                   </span>
                   {current === idx && !gameOver && (
                     <span className="text-[10px] font-bold uppercase text-primary">차례</span>

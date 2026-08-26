@@ -38,6 +38,7 @@ interface SetupScreenProps {
     timerEnabled: boolean;
     timerSeconds: number;
     turnOrder: [0 | 1 | 2, 0 | 1 | 2, 0 | 1 | 2];
+    aiDifficulty: Difficulty;
   }) => void;
 }
 
@@ -69,6 +70,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
     { name: DEFAULT_NAMES[2], hue: null },
   ]);
   const [aiCount, setAiCount] = useState<0 | 1 | 2>(0);
+  const [aiDifficulty, setAiDifficulty] = useState<Difficulty>("normal");
   const controls = controlsFor(aiCount);
   const [timerEnabled, setTimerEnabled] = useState(false);
   const [timerSeconds, setTimerSeconds] = useState(30);
@@ -193,6 +195,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
       timerEnabled,
       timerSeconds: Math.max(3, Math.min(600, timerSeconds || 30)),
       turnOrder,
+      aiDifficulty,
     });
   };
 
@@ -288,7 +291,7 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                     </span>
                     {isAi && (
                       <span className="inline-flex items-center gap-1 rounded-full border-2 border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                        <Bot className="w-3 h-3" /> AI · 보통
+                        <Bot className="w-3 h-3" /> AI · {DIFFICULTY_LABELS[aiDifficulty]}
                       </span>
                     )}
 
