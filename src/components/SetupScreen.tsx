@@ -240,7 +240,34 @@ export const SetupScreen = ({ onStart }: SetupScreenProps) => {
                   </button>
                 ))}
               </div>
+
+              {aiCount > 0 && (
+                <div className="mt-3">
+                  <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                    AI 난이도
+                  </span>
+                  <div className="mt-2 grid grid-cols-3 gap-2" role="group" aria-label="AI 난이도 선택">
+                    {(["easy", "normal", "hard"] as Difficulty[]).map((d) => (
+                      <button
+                        key={d}
+                        type="button"
+                        aria-pressed={aiDifficulty === d}
+                        onClick={() => setAiDifficulty(d)}
+                        className={[
+                          "btn-bounce rounded-xl border-2 h-10 text-sm font-bold transition-colors",
+                          aiDifficulty === d
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-border bg-card text-foreground hover:bg-secondary",
+                        ].join(" ")}
+                      >
+                        {DIFFICULTY_LABELS[d]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+
 
             <div className="grid gap-3 sm:grid-cols-3">
               {players.map((p, idx) => {
