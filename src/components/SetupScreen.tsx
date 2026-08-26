@@ -24,6 +24,8 @@ import {
 import { Sparkles, AlertCircle, Flag, BookOpen, Bot, Users } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Control } from "@/game/ai/normalAi";
+import { DIFFICULTY_LABELS, type Difficulty } from "@/game/ai/difficulty";
+
 
 export interface SetupPlayer {
   name: string;
